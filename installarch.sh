@@ -5,9 +5,8 @@
 #   Secure Boot: off
 #
 loadkeys de-latin1
-curl -s https://raw.githubusercontent.com/hyphenc/installarch/master/installarch.sh > installarch.sh
+curl -s https://raw.githubusercontent.com/hyphenc/installarch/dev/installarch.sh > installarch.sh
 chmod +x installarch.sh
-printf "\nPlease run ./installarch.sh firstrun\n\n"
 first() {
     printf "\nSetup internet access\n"
     ip link show
@@ -17,13 +16,13 @@ first() {
     timedatectl set-ntp true
     printf "\nCreate partitions\n\n"
     lsblk
-    printf "\nExample:\n1G EFI partition, hexcode ef00, label: boot\n4G Swap partition, hexcode 8200, label: swap\n*G Linux partition, hexcode 8300, label: root\n\n"
+    printf "\nExample:\n1G EFI partition, hexcode ef00, label: boot\n4G Swap partition, hexcode 8200, label: swap\n*G Root partition, hexcode 8300, label: root\n\n"
     cgdisk
     wait
     printf "\nDisk setup\n\n"
     lsblk -f
     read -rp "boot partition? : " bootpart
-    read -rp "linux partition? : " linuxpart
+    read -rp "root partition? : " linuxpart
     read -rp "swap partition? (to skip this, press enter) : " swappart
     printf "\nCreating boot partition...\n\n"
     mkfs.fat -F32 "$bootpart"
@@ -288,5 +287,5 @@ case $1 in
     setupssh)
         setupssh ;;
     *)
-        printf "\n./installarch.sh [argument] options:\n first, postchroot, purge (and setupssh)\n\n" ;;
+        printf "\n./installarch.sh [option]\n firstrun: run this first\n postchroot: run this after chroot\n purge: run this to remove packages\n(setupssh)\n\n" ;;
 esac
