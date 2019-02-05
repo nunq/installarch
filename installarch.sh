@@ -22,15 +22,15 @@ first() {
     printf "\nDisk setup\n\n"
     lsblk -f
     read -rp "boot partition? : " bootpart
-    read -rp "root partition? : " linuxpart
+    read -rp "root partition? : " rootpart
     read -rp "swap partition? (to skip this, press enter) : " swappart
     printf "\nCreating boot partition...\n\n"
     mkfs.fat -F32 "$bootpart"
     printf "\nSetup LUKS\n"
     printf "\nCreate LUKS encrypted partition\n\n"
-    cryptsetup luksFormat "$linuxpart"
+    cryptsetup luksFormat "$rootpart"
     printf "\nOpen LUKS encrypted partition\n\n"
-    cryptsetup open "$linuxpart" luks
+    cryptsetup open "$rootpart" luks
     mkfs.btrfs -L luks /dev/mapper/luks
     printf "\nCreating (or not creating) swap space...\n\n"
     # If $swappart is empty, mkswap will fail, but that's ok.
@@ -55,11 +55,11 @@ first() {
     # Configure pacman mirrors
     printf "Server = https://ftp.halifax.rwth-aachen.de/archlinux/\$repo/os/\$arch\nServer = http://archlinux.mirror.iphh.net/\$repo/os/\$arch\nServer = https://mirror.netcologne.de/archlinux/\$repo/os/\$arch\nServer = https://archlinux.nullpointer.io/\$repo/os/\$arch\nServer = https://packages.oth-regensburg.de/archlinux/\$repo/os/\$arch\nServer = http://ftp.uni-hannover.de/archlinux/\$repo/os/\$arch\n" | cat - /etc/pacman.d/mirrorlist > /etc/pacman.d/mirrorlist.new && mv /etc/pacman.d/mirrorlist.new /etc/pacman.d/mirrorlist
     # Install base & base-devel and mandatory packages for further setup
-    pacstrap /mnt base base-devel intel-ucode networkmanager git curl
+    pacstrap /mnt base base-devel intel-ucode networkmanager git curl btrfs-progs nvim
     printf "\nConfiguring fstab...\n\n"
     genfstab -L /mnt >> /mnt/etc/fstab
     printf "# !delete this!\n# Verify and adjust /mnt/etc/fstab\n# For all btrfs filesystems consider:\n# - Change relatime to noatime to reduce wear on SSD\n# - Adding discard to enable continuous TRIM for SSD\n# - Adding autodefrag to enable automatic defragmentation" >> /mnt/etc/fstab
-    nano /mnt/etc/fstab
+    nvim /mnt/etc/fstab
     printf "\nChrooting into /mnt..., please rerun this script with 'postchroot'\n\n"
     arch-chroot /mnt
 }
@@ -87,7 +87,7 @@ postchroot() {
     echo "$username ALL=(ALL) ALL" > /etc/sudoers.d/nils
     printf "\nConfiguring mkinitcpio...\n\n"
     sed -i 's/HOOKS=(.*/# --- !!! please check this !!! ---\nHOOKS=(base systemd autodetect modconf block keyboard sd-vconsole sd-encrypt filesystems fsck)/' /etc/mkinitcpio.conf
-    nano /etc/mkinitcpio.conf
+    nvim /etc/mkinitcpio.conf
     wait
     printf "\nRegenerating initrd img...\n\n"
     mkinitcpio -p linux
@@ -95,7 +95,8 @@ postchroot() {
     # Setting up systemd-boot
     bootctl --path=/boot install
     # Creating bootloader entry
-    luksuuid=$(cryptsetup luksUUID $linuxpart)
+    read -rp "root partition? : " rootpart
+    luksuuid=$(cryptsetup luksUUID $rootpart)
     printf "title\tArch Linux\nlinux\t/vmlinuz-linux\ninitrd\t/intel-ucode.img\ninitrd\t/intramfs-linux.img\noptions\trw luks.uuid=$luksuuid luks.name=$luksuuid=luks root=/dev/mapper/luks rootflags=subvol=@root\n" > /boot/loader/entries/arch.conf
     #Setting default bootloader entry
     printf "default arch\neditor no\nauto-entries 1\n" > /boot/loader/loader.conf
@@ -113,7 +114,7 @@ installpkg() {
     cd yay
     makepkg -si
     printf "\nInstalling packages...\n\n"
-    yay -S --needed --noconfirm $(curl -s http://ix.io/1Ag6 | tr "\n" " ")
+    yay -S --needed --noconfirm $(curl -s https://gist.githubusercontent.com/hyphenc/88f4581ab471021cb782a049c27d2363/raw/c3def7ead28f54187c37b4571dcdbe4bdeb0bec7/pkgs.txt | tr "\n" " ")
 }
 
 fish() {
@@ -199,7 +200,7 @@ gnome() {
     gsettings set org.gnome.desktop.privacy report-technical-problems false
     gsettings set org.gnome.desktop.privacy send-software-usage-stats false
     gsettings set org.gnome.desktop.search-providers disabled ["org.gnome.Nautilus.desktop","org.gnome.Terminal.desktop"]
-    gsettings set org.gnome.desktop.sound allow-volume-above-100-percent false
+    gsettings set org.gnome.desktop.sound allow-volume-above-100-percent true
     gsettings set org.gnome.system.location enabled false
 }
 
@@ -287,5 +288,5 @@ case $1 in
     setupssh)
         setupssh ;;
     *)
-        printf "\n./installarch.sh [option]\n firstrun: run this first\n postchroot: run this after chroot\n purge: run this to remove packages\n(setupssh)\n\n" ;;
+        printf "\n./installarch.sh [option]\n firstrun: run this first\n postchroot: run this after chroot\n postreboot: run this after reboot\n purge: run this to remove packages\n(setupssh)\n\n" ;;
 esac
