@@ -3,75 +3,72 @@
 # For laptops:
 #   Disks: AHCI
 #   Secure Boot: off
-
-first() {
-    ## Mostly Disk and partition configuration
-    # Set keymap
-    loadkeys de-latin1
-    echo -e "\nSetup internet access\n"
-    ip link show
-    read -rp "net interface? (to skip this, press enter): " netint
-    wifi-menu $netint
-    # Sync clock
-    timedatectl set-ntp true
-    echo -e "\nCreate partitions\n"
-    lsblk
-    cgdisk
-    wait
-    # 1G EFI partition
-    #   Hex code ef00
-    #   Label boot
-    # 4G Swap partition
-    #   Hex code 8200
-    #   Label swap
-    # XG Linux partition
-    #   Hex code 8300
-    #   Label root
-    echo -e "\nDisk setup\n"
-    lsblk -f
-    read -rp "boot partition? : " bootpart
-    read -rp "linux partition? : " linuxpart
-    read -rp "swap partition? (to skip this, press enter) : " swappart
-    echo -e "\nCreating boot partition...\n"
-    mkfs.fat -F32 "$bootpart"
-    echo -e "\nSetup LUKS\n"
-    echo -e "\nCreate LUKS encrypted partition\n"
-    cryptsetup luksFormat "$linuxpart"
-    echo -e "\nOpen LUKS encrypted partition\n"
-    cryptsetup open "$linuxpart" luks
-    mkfs.btrfs -L luks /dev/mapper/luks
-    echo -e "\nCreating (or not creating) swap space...\n"
-    # If $swappart is empty, mkswap will fail, but that's ok.
-    mkswap "$swappart"
-    echo -e "\nSetting up partitions...\n"
-    # Create btrfs subvolumes
-    mount -t btrfs /dev/mapper/luks /mnt
-    btrfs subvolume create /mnt/@root
-    btrfs subvolume create /mnt/@home
-    btrfs subvolume create /mnt/@snapshots
-    # Mount btrfs subvolumes
-    umount /mnt
-    mount -o subvol=@root /dev/mapper/luks /mnt
-    mkdir /mnt/home
-    mkdir /mnt/.snapshots
-    mount -o subvol=@home /dev/mapper/luks /mnt/home
-    mount -o subvol=@snapshots /dev/mapper/luks /mnt/.snapshots
-    # Mount EFI partition
-    mkdir /mnt/boot
-    mount "$bootpart" /mnt/boot
-    ## Pacman, pacstrap, fstab, chroot
-    echo -e "\nPacman configuration and pacstrap...\n"
-    # Configure pacman mirrors
-    printf "Server = https://ftp.halifax.rwth-aachen.de/archlinux/\$repo/os/\$arch\nServer = http://archlinux.mirror.iphh.net/\$repo/os/\$arch\nServer = https://mirror.netcologne.de/archlinux/\$repo/os/\$arch\nServer = https://archlinux.nullpointer.io/\$repo/os/\$arch\nServer = https://packages.oth-regensburg.de/archlinux/\$repo/os/\$arch\nServer = http://ftp.uni-hannover.de/archlinux/\$repo/os/\$arch\n" | cat - /etc/pacman.d/mirrorlist > /etc/pacman.d/mirrorlist.new && mv /etc/pacman.d/mirrorlist.new /etc/pacman.d/mirrorlist
-    # Install base & base-devel and mandatory packages for further setup
-    pacstrap /mnt base base-devel intel-ucode networkmanager git curl
-    echo -e "\nConfiguring fstab...\n"
-    genfstab -L /mnt >> /mnt/etc/fstab
-    printf "# !delete this!\n# Verify and adjust /mnt/etc/fstab\n# For all btrfs filesystems consider:\n# - Change relatime to noatime to reduce wear on SSD\n# - Adding discard to enable continuous TRIM for SSD\n# - Adding autodefrag to enable automatic defragmentation" >> /mnt/etc/fstab
-    nano /mnt/etc/fstab
-    echo -e "\nChrooting into /mnt..., please rerun this script with 'postchroot'\n"
-    arch-chroot /mnt
-}
+#
+## Internet, Disk and partition configuration
+# Set keymap
+loadkeys de-latin1
+echo -e "\nSetup internet access\n"
+ip link show
+read -rp "net interface? (to skip this, press enter): " netint
+wifi-menu $netint
+timedatectl set-ntp true
+echo -e "\nCreate partitions\n"
+lsblk
+cgdisk
+wait
+# 1G EFI partition
+#   Hex code ef00
+#   Label boot
+# 4G Swap partition
+#   Hex code 8200
+#   Label swap
+# XG Linux partition
+#   Hex code 8300
+#   Label root
+echo -e "\nDisk setup\n"
+lsblk -f
+read -rp "boot partition? : " bootpart
+read -rp "linux partition? : " linuxpart
+read -rp "swap partition? (to skip this, press enter) : " swappart
+echo -e "\nCreating boot partition...\n"
+mkfs.fat -F32 "$bootpart"
+echo -e "\nSetup LUKS\n"
+echo -e "\nCreate LUKS encrypted partition\n"
+cryptsetup luksFormat "$linuxpart"
+echo -e "\nOpen LUKS encrypted partition\n"
+cryptsetup open "$linuxpart" luks
+mkfs.btrfs -L luks /dev/mapper/luks
+echo -e "\nCreating (or not creating) swap space...\n"
+# If $swappart is empty, mkswap will fail, but that's ok.
+mkswap "$swappart"
+echo -e "\nSetting up partitions...\n"
+# Create btrfs subvolumes
+mount -t btrfs /dev/mapper/luks /mnt
+btrfs subvolume create /mnt/@root
+btrfs subvolume create /mnt/@home
+btrfs subvolume create /mnt/@snapshots
+# Mount btrfs subvolumes
+umount /mnt
+mount -o subvol=@root /dev/mapper/luks /mnt
+mkdir /mnt/home
+mkdir /mnt/.snapshots
+mount -o subvol=@home /dev/mapper/luks /mnt/home
+mount -o subvol=@snapshots /dev/mapper/luks /mnt/.snapshots
+# Mount EFI partition
+mkdir /mnt/boot
+mount "$bootpart" /mnt/boot
+## Pacman, pacstrap, fstab, chroot
+echo -e "\nPacman configuration and pacstrap...\n"
+# Configure pacman mirrors
+printf "Server = https://ftp.halifax.rwth-aachen.de/archlinux/\$repo/os/\$arch\nServer = http://archlinux.mirror.iphh.net/\$repo/os/\$arch\nServer = https://mirror.netcologne.de/archlinux/\$repo/os/\$arch\nServer = https://archlinux.nullpointer.io/\$repo/os/\$arch\nServer = https://packages.oth-regensburg.de/archlinux/\$repo/os/\$arch\nServer = http://ftp.uni-hannover.de/archlinux/\$repo/os/\$arch\n" | cat - /etc/pacman.d/mirrorlist > /etc/pacman.d/mirrorlist.new && mv /etc/pacman.d/mirrorlist.new /etc/pacman.d/mirrorlist
+# Install base & base-devel and mandatory packages for further setup
+pacstrap /mnt base base-devel intel-ucode networkmanager git curl
+echo -e "\nConfiguring fstab...\n"
+genfstab -L /mnt >> /mnt/etc/fstab
+printf "# !delete this!\n# Verify and adjust /mnt/etc/fstab\n# For all btrfs filesystems consider:\n# - Change relatime to noatime to reduce wear on SSD\n# - Adding discard to enable continuous TRIM for SSD\n# - Adding autodefrag to enable automatic defragmentation" >> /mnt/etc/fstab
+nano /mnt/etc/fstab
+echo -e "\nChrooting into /mnt..., please rerun this script with 'postchroot'\n"
+arch-chroot /mnt
 
 postchroot() {
     echo -e "\nSetting up time...\n"
@@ -121,8 +118,8 @@ installpkg() {
     git clone https://aur.archlinux.org/yay.git
     cd yay
     makepkg -si
-    echo -e "\nInstalling packages...\n" #update pastes +sshfs,bluez
-    yay -S --needed --noconfirm $(curl -s http://ix.io/1zX5 | tr "\n" " ")
+    echo -e "\nInstalling packages...\n" ##TODO update pastes +sshfs,bluez
+    yay -S --needed --noconfirm $(curl -s http://ix.io/LINK | tr "\n" " ")
 }
 
 fish() {
@@ -234,6 +231,7 @@ domisc() {
 
 purge() {
     echo -e "\nRemoving packages...\n"
+    ##TODO add link
     yay -Rsn $(curl -s http://ix.io/LINK | tr "\n" " ")
  }
 
@@ -262,7 +260,8 @@ firewall() {
 
 setupssh() {
     echo -e "\nConfiguring SSH\n"
-    echo -e "Port 54191\nPermitRootLogin no\nMaxAuthTries 2\nMaxSessions 2\nPubkeyAuthetication yes\nAuthorizedKeysFile .ssh/authorized_keys\nPasswordAuthentication no\nPermitEmptyPasswords no\nChallengeResponseAuthentication no\nUsePAM yes\nPrintMotd no\nX11Forwarding no\nSubsystem sftp /usr/lib/ssh/sftp-server" > /etc/ssh/sshd_config
+    read -rp "port? : " sshport
+    printf "Port $sshport\nPermitRootLogin no\nMaxAuthTries 2\nMaxSessions 2\nPubkeyAuthetication yes\nAuthorizedKeysFile .ssh/authorized_keys\nPasswordAuthentication no\nPermitEmptyPasswords no\nChallengeResponseAuthentication no\nUsePAM yes\nPrintMotd no\nX11Forwarding no\nSubsystem sftp /usr/lib/ssh/sftp-server\n" > /etc/ssh/sshd_config
     sudo systemctl start sshd
     sudo systemctl enable sshd
 }
@@ -273,9 +272,6 @@ finished() {
 }
 
 case $1 in
-    first)
-        first
-        exit ;;
     postchroot)
         postchroot
         exit ;;
@@ -295,5 +291,5 @@ case $1 in
         setupssh
         exit ;;
     *)
-        echo -e "\n./installarch.sh [argument] options:\n first, postchroot, purge (and setupssh)\n" ;;
+        echo -e "\n./installarch.sh [argument] options:\n postchroot, purge (and setupssh)\n" ;;
 esac
