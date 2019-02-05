@@ -7,7 +7,7 @@
 loadkeys de-latin1
 curl -s https://raw.githubusercontent.com/hyphenc/installarch/master/installarch.sh > installarch.sh
 chmod +x installarch.sh
-printf "\nPlease run ./installarch.sh firstrun\n"
+printf "\nPlease run ./installarch.sh firstrun\n\n"
 first() {
     printf "\nSetup internet access\n"
     ip link show
@@ -15,28 +15,28 @@ first() {
     # If $netint is empty, wifi-menu will fail, but that's ok.
     wifi-menu $netint
     timedatectl set-ntp true
-    printf "\nCreate partitions\n"
+    printf "\nCreate partitions\n\n"
     lsblk
-    printf "\nExample:\n1G EFI partition, hexcode ef00, label: boot\n4G Swap partition, hexcode 8200, label: swap\n*G Linux partition, hexcode 8300, label: root\n"
+    printf "\nExample:\n1G EFI partition, hexcode ef00, label: boot\n4G Swap partition, hexcode 8200, label: swap\n*G Linux partition, hexcode 8300, label: root\n\n"
     cgdisk
     wait
-    printf "\nDisk setup\n"
+    printf "\nDisk setup\n\n"
     lsblk -f
     read -rp "boot partition? : " bootpart
     read -rp "linux partition? : " linuxpart
     read -rp "swap partition? (to skip this, press enter) : " swappart
-    printf "\nCreating boot partition...\n"
+    printf "\nCreating boot partition...\n\n"
     mkfs.fat -F32 "$bootpart"
     printf "\nSetup LUKS\n"
-    printf "\nCreate LUKS encrypted partition\n"
+    printf "\nCreate LUKS encrypted partition\n\n"
     cryptsetup luksFormat "$linuxpart"
-    printf "\nOpen LUKS encrypted partition\n"
+    printf "\nOpen LUKS encrypted partition\n\n"
     cryptsetup open "$linuxpart" luks
     mkfs.btrfs -L luks /dev/mapper/luks
-    printf "\nCreating (or not creating) swap space...\n"
+    printf "\nCreating (or not creating) swap space...\n\n"
     # If $swappart is empty, mkswap will fail, but that's ok.
     mkswap "$swappart"
-    printf "\nSetting up partitions...\n"
+    printf "\nSetting up partitions...\n\n"
     # Create btrfs subvolumes
     mount -t btrfs /dev/mapper/luks /mnt
     btrfs subvolume create /mnt/@root
@@ -52,47 +52,47 @@ first() {
     # Mount EFI partition
     mkdir /mnt/boot
     mount "$bootpart" /mnt/boot
-    printf "\nPacman configuration and pacstrap...\n"
+    printf "\nPacman configuration and pacstrap...\n\n"
     # Configure pacman mirrors
     printf "Server = https://ftp.halifax.rwth-aachen.de/archlinux/\$repo/os/\$arch\nServer = http://archlinux.mirror.iphh.net/\$repo/os/\$arch\nServer = https://mirror.netcologne.de/archlinux/\$repo/os/\$arch\nServer = https://archlinux.nullpointer.io/\$repo/os/\$arch\nServer = https://packages.oth-regensburg.de/archlinux/\$repo/os/\$arch\nServer = http://ftp.uni-hannover.de/archlinux/\$repo/os/\$arch\n" | cat - /etc/pacman.d/mirrorlist > /etc/pacman.d/mirrorlist.new && mv /etc/pacman.d/mirrorlist.new /etc/pacman.d/mirrorlist
     # Install base & base-devel and mandatory packages for further setup
     pacstrap /mnt base base-devel intel-ucode networkmanager git curl
-    printf "\nConfiguring fstab...\n"
+    printf "\nConfiguring fstab...\n\n"
     genfstab -L /mnt >> /mnt/etc/fstab
     printf "# !delete this!\n# Verify and adjust /mnt/etc/fstab\n# For all btrfs filesystems consider:\n# - Change relatime to noatime to reduce wear on SSD\n# - Adding discard to enable continuous TRIM for SSD\n# - Adding autodefrag to enable automatic defragmentation" >> /mnt/etc/fstab
     nano /mnt/etc/fstab
-    printf "\nChrooting into /mnt..., please rerun this script with 'postchroot'\n"
+    printf "\nChrooting into /mnt..., please rerun this script with 'postchroot'\n\n"
     arch-chroot /mnt
 }
 
 postchroot() {
-    printf "\nSetting up time...\n"
+    printf "\nSetting up time...\n\n"
     rm /etc/localtime
     ln -s /usr/share/zoneinfo/Europe/Berlin /etc/localtime
     hwclock --systohc
     echo "en_DK.UTF-8 UTF-8" | cat - /etc/locale.gen > /tmp/localegen && mv /tmp/localegen /etc/locale.gen
     locale-gen
-    printf "\nSetting locale and keymap...\n"
+    printf "\nSetting locale and keymap...\n\n"
     echo "LANG=en_DK.UTF-8" > /etc/locale.conf
     echo "KEYMAP=de" > /etc/vconsole.conf
-    printf "\nConfiguring hostname...\n"
+    printf "\nConfiguring hostname...\n\n"
     read -rp "hostname? : " hostnamevar
     echo "$hostnamevar" > /etc/hostname
     curl -s https://raw.githubusercontent.com/StevenBlack/hosts/master/alternates/fakenews-gambling/hosts > /etc/hosts
-    printf "\nSet root password\n"
+    printf "\nSet root password\n\n"
     passwd
-    printf "\nAdding a normal user...\n"
+    printf "\nAdding a normal user...\n\n"
     read -rp "username? : " username
     useradd -m -G wheel $username
     passwd $username
     echo "$username ALL=(ALL) ALL" > /etc/sudoers.d/nils
-    printf "\nConfiguring mkinitcpio...\n"
+    printf "\nConfiguring mkinitcpio...\n\n"
     sed -i 's/HOOKS=(.*/# --- !!! please check this !!! ---\nHOOKS=(base systemd autodetect modconf block keyboard sd-vconsole sd-encrypt filesystems fsck)/' /etc/mkinitcpio.conf
     nano /etc/mkinitcpio.conf
     wait
-    printf "\nRegenerating initrd img...\n"
+    printf "\nRegenerating initrd img...\n\n"
     mkinitcpio -p linux
-    printf "\nConfiguring boot...\n"
+    printf "\nConfiguring boot...\n\n"
     # Setting up systemd-boot
     bootctl --path=/boot install
     # Creating bootloader entry
@@ -100,27 +100,27 @@ postchroot() {
     printf "title\tArch Linux\nlinux\t/vmlinuz-linux\ninitrd\t/intel-ucode.img\ninitrd\t/intramfs-linux.img\noptions\trw luks.uuid=$luksuuid luks.name=$luksuuid=luks root=/dev/mapper/luks rootflags=subvol=@root\n" > /boot/loader/entries/arch.conf
     #Setting default bootloader entry
     printf "default arch\neditor no\nauto-entries 1\n" > /boot/loader/loader.conf
-    printf "\nRebooting..., please rerun this script with 'postreboot'\n"
+    printf "\nRebooting..., please rerun this script with 'postreboot'\n\n"
     sleep 3
     exit
     reboot
 }
 
 installpkg() {
-    printf "\nUpdating system...\n"
+    printf "\nUpdating system...\n\n"
     sudo pacman -Syyu
-    printf "\nInstalling yay...\n"
+    printf "\nInstalling yay...\n\n"
     git clone https://aur.archlinux.org/yay.git
     cd yay
     makepkg -si
-    printf "\nInstalling packages...\n"
+    printf "\nInstalling packages...\n\n"
     yay -S --needed --noconfirm $(curl -s http://ix.io/1Ag6 | tr "\n" " ")
 }
 
 fish() {
-    printf "\nChanging default shell to fish\n"
+    printf "\nChanging default shell to fish\n\n"
     chsh -s /usr/bin/fish
-    printf "\nInstalling omf and configuring fish...\n"
+    printf "\nInstalling omf and configuring fish...\n\n"
     curl -sL https://get.oh-my.fish | fish
     omf install archlinux cd fish-spec omf agnoster shellder fonts
     omf theme shellder
@@ -148,7 +148,7 @@ fish() {
 }
 
 system() {
-    printf "\nConfiguring systemd services...\n"
+    printf "\nConfiguring systemd services...\n\n"
     sudo systemctl enable NetworkManager
     sudo systemctl enable cronie
     sudo systemctl enable bluetooth
@@ -156,7 +156,7 @@ system() {
 }
 
 gnome() {
-    printf "\nConfiguring gnome...\n"
+    printf "\nConfiguring gnome...\n\n"
     # General
     gsettings set org.gnome.settings-daemon.plugins.color night-light-enabled true
     gsettings set org.gnome.settings-daemon.plugins.color night-light-schedule-automatic true
@@ -205,7 +205,7 @@ gnome() {
 }
 
 domisc() {
-    printf "\nConfiguring startup apps...\n"
+    printf "\nConfiguring startup apps...\n\n"
     # Startup apps
     mkdir -p ~/.config/autostart
     chmod 700 ~/.config
@@ -214,7 +214,7 @@ domisc() {
     printf "[Desktop Entry]\nName='wipe image cache'\nComment='Run wipe image cache'\nExec='wipe -rf .cache/thumbnails/ ; wipe -rf .cache/sxiv/'\nTerminal=false\nType=Application\n" > ~/.config/autostart/wipeimagecache.desktop
     # Install fonts?
     #cp to ~/.fonts then fc-cache -f -v ?
-    printf "\nConfiguring miscellaneous stuff...\n"
+    printf "\nConfiguring miscellaneous stuff...\n\n"
     # Get ix.io binary
     sudo curl -s ix.io/client > /usr/local/bin/ix
     sudo chmod +x /usr/bin/ix
@@ -229,13 +229,13 @@ domisc() {
 }
 
 purge() {
-    printf "\nRemoving packages...\n"
+    printf "\nRemoving packages...\n\n"
     ##TODO add link
     yay -Rsn $(curl -s http://ix.io/LINK | tr "\n" " ")
  }
 
 firewall() {
-    printf "\nConfiguring firewall...\n"
+    printf "\nConfiguring firewall...\n\n"
     sudo ufw default deny
     # sshd
     sudo ufw allow 54191
@@ -258,7 +258,7 @@ firewall() {
 }
 
 setupssh() {
-    printf "\nConfiguring SSH\n"
+    printf "\nConfiguring SSH\n\n"
     read -rp "port? : " sshport
     printf "Port $sshport\nPermitRootLogin no\nMaxAuthTries 2\nMaxSessions 2\nPubkeyAuthetication yes\nAuthorizedKeysFile .ssh/authorized_keys\nPasswordAuthentication no\nPermitEmptyPasswords no\nChallengeResponseAuthentication no\nUsePAM yes\nPrintMotd no\nX11Forwarding no\nSubsystem sftp /usr/lib/ssh/sftp-server\n" > /etc/ssh/sshd_config
     sudo systemctl start sshd
@@ -267,7 +267,7 @@ setupssh() {
 
 finished() {
     printf "\nconsider:\n Changing root shell to fish\n Enabling ssh with argument 'setupssh' \n Setting user password in gnome (to log in with gdm)\n Setting up email in Evolution"
-    printf "\nDone with setup. Have fun!\n"
+    printf "\nDone with setup. Have fun!\n\n"
 }
 
 case $1 in
@@ -288,5 +288,5 @@ case $1 in
     setupssh)
         setupssh ;;
     *)
-        printf "\n./installarch.sh [argument] options:\n first, postchroot, purge (and setupssh)\n" ;;
+        printf "\n./installarch.sh [argument] options:\n first, postchroot, purge (and setupssh)\n\n" ;;
 esac
