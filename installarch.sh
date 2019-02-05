@@ -4,62 +4,66 @@
 #   Disks: AHCI
 #   Secure Boot: off
 #
-# Set keymap
 loadkeys de-latin1
-printf "\nSetup internet access\n"
-ip link show
-read -rp "net interface? (to skip this, press enter): " netint
-# If $netint is empty, wifi-menu will fail, but that's ok.
-wifi-menu $netint
-timedatectl set-ntp true
-printf "\nCreate partitions\n"
-lsblk
-printf "\nExample:\n1G EFI partition, hexcode ef00, label: boot\n4G Swap partition, hexcode 8200, label: swap\n*G Linux partition, hexcode 8300, label: root\n"
-cgdisk
-wait
-printf "\nDisk setup\n"
-lsblk -f
-read -rp "boot partition? : " bootpart
-read -rp "linux partition? : " linuxpart
-read -rp "swap partition? (to skip this, press enter) : " swappart
-printf "\nCreating boot partition...\n"
-mkfs.fat -F32 "$bootpart"
-printf "\nSetup LUKS\n"
-printf "\nCreate LUKS encrypted partition\n"
-cryptsetup luksFormat "$linuxpart"
-printf "\nOpen LUKS encrypted partition\n"
-cryptsetup open "$linuxpart" luks
-mkfs.btrfs -L luks /dev/mapper/luks
-printf "\nCreating (or not creating) swap space...\n"
-# If $swappart is empty, mkswap will fail, but that's ok.
-mkswap "$swappart"
-printf "\nSetting up partitions...\n"
-# Create btrfs subvolumes
-mount -t btrfs /dev/mapper/luks /mnt
-btrfs subvolume create /mnt/@root
-btrfs subvolume create /mnt/@home
-btrfs subvolume create /mnt/@snapshots
-# Mount btrfs subvolumes
-umount /mnt
-mount -o subvol=@root /dev/mapper/luks /mnt
-mkdir /mnt/home
-mkdir /mnt/.snapshots
-mount -o subvol=@home /dev/mapper/luks /mnt/home
-mount -o subvol=@snapshots /dev/mapper/luks /mnt/.snapshots
-# Mount EFI partition
-mkdir /mnt/boot
-mount "$bootpart" /mnt/boot
-printf "\nPacman configuration and pacstrap...\n"
-# Configure pacman mirrors
-printf "Server = https://ftp.halifax.rwth-aachen.de/archlinux/\$repo/os/\$arch\nServer = http://archlinux.mirror.iphh.net/\$repo/os/\$arch\nServer = https://mirror.netcologne.de/archlinux/\$repo/os/\$arch\nServer = https://archlinux.nullpointer.io/\$repo/os/\$arch\nServer = https://packages.oth-regensburg.de/archlinux/\$repo/os/\$arch\nServer = http://ftp.uni-hannover.de/archlinux/\$repo/os/\$arch\n" | cat - /etc/pacman.d/mirrorlist > /etc/pacman.d/mirrorlist.new && mv /etc/pacman.d/mirrorlist.new /etc/pacman.d/mirrorlist
-# Install base & base-devel and mandatory packages for further setup
-pacstrap /mnt base base-devel intel-ucode networkmanager git curl
-printf "\nConfiguring fstab...\n"
-genfstab -L /mnt >> /mnt/etc/fstab
-printf "# !delete this!\n# Verify and adjust /mnt/etc/fstab\n# For all btrfs filesystems consider:\n# - Change relatime to noatime to reduce wear on SSD\n# - Adding discard to enable continuous TRIM for SSD\n# - Adding autodefrag to enable automatic defragmentation" >> /mnt/etc/fstab
-nano /mnt/etc/fstab
-printf "\nChrooting into /mnt..., please rerun this script with 'postchroot'\n"
-arch-chroot /mnt
+curl -s https://raw.githubusercontent.com/hyphenc/installarch/master/installarch.sh > installarch.sh
+chmod +x installarch.sh
+printf "\nPlease run ./installarch.sh firstrun\n"
+first() {
+    printf "\nSetup internet access\n"
+    ip link show
+    read -rp "net interface? (to skip this, press enter): " netint
+    # If $netint is empty, wifi-menu will fail, but that's ok.
+    wifi-menu $netint
+    timedatectl set-ntp true
+    printf "\nCreate partitions\n"
+    lsblk
+    printf "\nExample:\n1G EFI partition, hexcode ef00, label: boot\n4G Swap partition, hexcode 8200, label: swap\n*G Linux partition, hexcode 8300, label: root\n"
+    cgdisk
+    wait
+    printf "\nDisk setup\n"
+    lsblk -f
+    read -rp "boot partition? : " bootpart
+    read -rp "linux partition? : " linuxpart
+    read -rp "swap partition? (to skip this, press enter) : " swappart
+    printf "\nCreating boot partition...\n"
+    mkfs.fat -F32 "$bootpart"
+    printf "\nSetup LUKS\n"
+    printf "\nCreate LUKS encrypted partition\n"
+    cryptsetup luksFormat "$linuxpart"
+    printf "\nOpen LUKS encrypted partition\n"
+    cryptsetup open "$linuxpart" luks
+    mkfs.btrfs -L luks /dev/mapper/luks
+    printf "\nCreating (or not creating) swap space...\n"
+    # If $swappart is empty, mkswap will fail, but that's ok.
+    mkswap "$swappart"
+    printf "\nSetting up partitions...\n"
+    # Create btrfs subvolumes
+    mount -t btrfs /dev/mapper/luks /mnt
+    btrfs subvolume create /mnt/@root
+    btrfs subvolume create /mnt/@home
+    btrfs subvolume create /mnt/@snapshots
+    # Mount btrfs subvolumes
+    umount /mnt
+    mount -o subvol=@root /dev/mapper/luks /mnt
+    mkdir /mnt/home
+    mkdir /mnt/.snapshots
+    mount -o subvol=@home /dev/mapper/luks /mnt/home
+    mount -o subvol=@snapshots /dev/mapper/luks /mnt/.snapshots
+    # Mount EFI partition
+    mkdir /mnt/boot
+    mount "$bootpart" /mnt/boot
+    printf "\nPacman configuration and pacstrap...\n"
+    # Configure pacman mirrors
+    printf "Server = https://ftp.halifax.rwth-aachen.de/archlinux/\$repo/os/\$arch\nServer = http://archlinux.mirror.iphh.net/\$repo/os/\$arch\nServer = https://mirror.netcologne.de/archlinux/\$repo/os/\$arch\nServer = https://archlinux.nullpointer.io/\$repo/os/\$arch\nServer = https://packages.oth-regensburg.de/archlinux/\$repo/os/\$arch\nServer = http://ftp.uni-hannover.de/archlinux/\$repo/os/\$arch\n" | cat - /etc/pacman.d/mirrorlist > /etc/pacman.d/mirrorlist.new && mv /etc/pacman.d/mirrorlist.new /etc/pacman.d/mirrorlist
+    # Install base & base-devel and mandatory packages for further setup
+    pacstrap /mnt base base-devel intel-ucode networkmanager git curl
+    printf "\nConfiguring fstab...\n"
+    genfstab -L /mnt >> /mnt/etc/fstab
+    printf "# !delete this!\n# Verify and adjust /mnt/etc/fstab\n# For all btrfs filesystems consider:\n# - Change relatime to noatime to reduce wear on SSD\n# - Adding discard to enable continuous TRIM for SSD\n# - Adding autodefrag to enable automatic defragmentation" >> /mnt/etc/fstab
+    nano /mnt/etc/fstab
+    printf "\nChrooting into /mnt..., please rerun this script with 'postchroot'\n"
+    arch-chroot /mnt
+}
 
 postchroot() {
     printf "\nSetting up time...\n"
@@ -137,7 +141,7 @@ fish() {
     abbr -a gst "git status"
     abbr -a gaa "git add -A"
     abbr -a gcm "git commit -m"
-    abbr -a gpom "git push origin master"
+    abbr -a gpo "git push origin"
     # Set environment variables
     set -Ux SHELL /usr/bin/fish
     set -Ux EDITOR nvim
@@ -267,9 +271,10 @@ finished() {
 }
 
 case $1 in
+    firstrun)
+        first ;;
     postchroot)
-        postchroot
-        exit ;;
+        postchroot ;;
     postreboot)
         installpkg
         fish
@@ -277,14 +282,11 @@ case $1 in
         gnome
         domisc
         firewall
-        finished
-        exit ;;
+        finished ;;
     purge)
-        purge
-        exit ;;
+        purge ;;
     setupssh)
-        setupssh
-        exit ;;
+        setupssh ;;
     *)
-        printf "\n./installarch.sh [argument] options:\n postchroot, purge (and setupssh)\n" ;;
+        printf "\n./installarch.sh [argument] options:\n first, postchroot, purge (and setupssh)\n" ;;
 esac
