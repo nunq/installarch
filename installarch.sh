@@ -3,11 +3,9 @@
 # For laptops:
 #   Disks: AHCI
 #   Secure Boot: off
-printf "\nHello, we're gonna install Arch together :D\n"
-read -rp "choose script version to use (master or dev) : " ghbranch
-curl -s https://raw.githubusercontent.com/hyphenc/installarch/$ghbranch/installarch.sh > installarch.sh
-chmod +x installarch.sh
 loadkeys de-latin1
+curl -s https://raw.githubusercontent.com/hyphenc/installarch/master/installarch.sh > installarch.sh
+chmod +x installarch.sh
 first() {
     printf "\nSetup internet access\n\n"
     ip link show
@@ -259,6 +257,18 @@ finished() {
     printf "\nconsider:\n Changing root shell to fish\n Enabling ssh with argument 'setupssh' \n Setting user password in gnome (to log in with gdm)\n Setting up email in Evolution"
     printf "\nDone with setup. Have fun!\n\n"
 }
+scriptver() {
+    case $1 in
+        master)
+            curl -s https://raw.githubusercontent.com/hyphenc/installarch/master/installarch.sh > installarch.sh
+            chmod +x installarch.sh ;;
+        dev)
+            curl -s https://raw.githubusercontent.com/hyphenc/installarch/dev/installarch.sh > installarch.sh
+            chmod +x installarch.sh ;;
+        *)
+            printf "\nError: options are 'master' and 'dev'\n" ;;
+    esac
+}
 case $1 in
     firstrun)
         first ;;
@@ -276,6 +286,8 @@ case $1 in
         purge ;;
     setupssh)
         setupssh ;;
+    scriptver)
+        scriptver $2 ;;
     *)
-        printf "\n./installarch.sh [option]\n firstrun: run this first\n postchroot: run this after chroot\n postreboot: run this after reboot\n purge: run this to remove packages\n (setupssh: set up ssh)\n\n" ;;
+        printf "\n./installarch.sh [option]\n firstrun: run this first\n postchroot: run this after chroot\n postreboot: run this after reboot\n purge: run this to remove packages\n scriptver: set the 'script version'\n  (setupssh: set up ssh)\n\n" ;;
 esac
