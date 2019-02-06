@@ -4,7 +4,7 @@
 #   Disks: AHCI
 #   Secure Boot: off
 loadkeys de-latin1
-curl -s https://raw.githubusercontent.com/hyphenc/installarch/master/installarch.sh > installarch.sh
+curl -s https://raw.githubusercontent.com/hyphenc/installarch/dev/installarch.sh > installarch.sh
 chmod +x installarch.sh
 first() {
     printf "\nSetup internet access\n\n"
