@@ -110,7 +110,8 @@ installpkg() {
     cd yay
     makepkg -si
     printf "\nInstalling packages...\n\n"
-    yay -S --needed --noconfirm $(curl -s https://gist.githubusercontent.com/hyphenc/88f4581ab471021cb782a049c27d2363/raw/c3def7ead28f54187c37b4571dcdbe4bdeb0bec7/pkgs.txt | tr "\n" " ")
+    ## TODO dev needs to be changed to master beforing pulling into master
+    yay -S --needed --noconfirm $(curl -s https://raw.githubusercontent.com/hyphenc/installarch/dev/packages.txt | tr "\n" " ")
 }
 fish() {
     printf "\nChanging default shell to fish\n\n"
