@@ -8,7 +8,7 @@ loadkeys de-latin1
 curl -s https://raw.githubusercontent.com/hyphenc/installarch/dev/installarch.sh > installarch.sh
 chmod +x installarch.sh
 first() {
-    printf "\nSetup internet access\n"
+    printf "\nSetup internet access\n\n"
     ip link show
     read -rp "net interface? (to skip this, press enter): " netint
     # If $netint is empty, wifi-menu will fail, but that's ok.
@@ -26,7 +26,6 @@ first() {
     read -rp "swap partition? (to skip this, press enter) : " swappart
     printf "\nCreating boot partition...\n\n"
     mkfs.fat -F32 "$bootpart"
-    printf "\nSetup LUKS\n"
     printf "\nCreate LUKS encrypted partition\n\n"
     cryptsetup luksFormat "$rootpart"
     printf "\nOpen LUKS encrypted partition\n\n"
@@ -53,13 +52,13 @@ first() {
     mount "$bootpart" /mnt/boot
     printf "\nPacman configuration and pacstrap...\n\n"
     # Configure pacman mirrors
-    printf "Server = https://ftp.halifax.rwth-aachen.de/archlinux/\$repo/os/\$arch\nServer = http://archlinux.mirror.iphh.net/\$repo/os/\$arch\nServer = https://mirror.netcologne.de/archlinux/\$repo/os/\$arch\nServer = https://archlinux.nullpointer.io/\$repo/os/\$arch\nServer = https://packages.oth-regensburg.de/archlinux/\$repo/os/\$arch\nServer = http://ftp.uni-hannover.de/archlinux/\$repo/os/\$arch\n" | cat - /etc/pacman.d/mirrorlist > /etc/pacman.d/mirrorlist.new && mv /etc/pacman.d/mirrorlist.new /etc/pacman.d/mirrorlist
+    printf "Server = https://ftp.halifax.rwth-aachen.de/archlinux/\$repo/os/\$arch\nServer = http://archlinux.mirror.iphh.net/\$repo/os/\$arch\nServer = https://mirror.netcologne.de/archlinux/\$repo/os/\$arch\nServer = https://archlinux.nullpointer.io/\$repo/os/\$arch\nServer = http://ftp.uni-hannover.de/archlinux/\$repo/os/\$arch\n" | cat - /etc/pacman.d/mirrorlist > /etc/pacman.d/mirrorlist.new && mv /etc/pacman.d/mirrorlist.new /etc/pacman.d/mirrorlist
     # Install base & base-devel and mandatory packages for further setup
     pacstrap /mnt base base-devel intel-ucode networkmanager git curl btrfs-progs nvim
     printf "\nConfiguring fstab...\n\n"
     genfstab -L /mnt >> /mnt/etc/fstab
     printf "# !delete this!\n# Verify and adjust /mnt/etc/fstab\n# For all btrfs filesystems consider:\n# - Change relatime to noatime to reduce wear on SSD\n# - Adding discard to enable continuous TRIM for SSD\n# - Adding autodefrag to enable automatic defragmentation" >> /mnt/etc/fstab
-    nvim /mnt/etc/fstab
+    nano /mnt/etc/fstab
     printf "\nChrooting into /mnt..., please rerun this script with 'postchroot'\n\n"
     arch-chroot /mnt
 }
@@ -83,18 +82,17 @@ postchroot() {
     printf "\nAdding a normal user...\n\n"
     read -rp "username? : " username
     useradd -m -G wheel $username
-    passwd $username
+    passwd "$username"
     echo "$username ALL=(ALL) ALL" > /etc/sudoers.d/nils
     printf "\nConfiguring mkinitcpio...\n\n"
-    sed -i 's/HOOKS=(.*/# --- !!! please check this !!! ---\nHOOKS=(base systemd autodetect modconf block keyboard sd-vconsole sd-encrypt filesystems fsck)/' /etc/mkinitcpio.conf
+    sed -i 's/^HOOKS=(.*/# --- !!! please check this !!! ---\nHOOKS=(base systemd autodetect modconf block keyboard sd-vconsole sd-encrypt filesystems fsck)/' /etc/mkinitcpio.conf
     nvim /etc/mkinitcpio.conf
     wait
     printf "\nRegenerating initrd img...\n\n"
     mkinitcpio -p linux
-    printf "\nConfiguring boot...\n\n"
+    printf "\nConfiguring systemd-boot...\n\n"
     # Setting up systemd-boot
     bootctl --path=/boot install
-    # Creating bootloader entry
     read -rp "root partition? : " rootpart
     luksuuid=$(cryptsetup luksUUID $rootpart)
     printf "title\tArch Linux\nlinux\t/vmlinuz-linux\ninitrd\t/intel-ucode.img\ninitrd\t/intramfs-linux.img\noptions\trw luks.uuid=$luksuuid luks.name=$luksuuid=luks root=/dev/mapper/luks rootflags=subvol=@root\n" > /boot/loader/entries/arch.conf
@@ -128,20 +126,20 @@ fish() {
     # Fish-greeting func
     printf "function fish_greeting\n\tprintf '\\\n fish\\\n'\nend\n" > ~/.config/fish/functions/fish_greeting.fish
     # Fish abbreviations
-    abbr -a ß proxychains
-    abbr -a org "bash ~/code/shell/org.sh"
-    abbr -a lsl "ls -l --block-size=M"
-    abbr -a p "sudo pacman"
-    abbr -a y "yay"
-    abbr -a cdd "cd ~/Downloads"
-    abbr -a pws "python -m http.server"
     abbr -a bm "bash ~/code/cmods/bm.sh"
-    abbr -a s "sudo systemctl"
-    abbr -a news "newsboat"
-    abbr -a gst "git status"
+    abbr -a cdd "cd ~/Downloads"
     abbr -a gaa "git add -A"
     abbr -a gcm "git commit -m"
     abbr -a gpo "git push origin"
+    abbr -a gst "git status"
+    abbr -a lsl "ls -l --block-size=M"
+    abbr -a news "newsboat"
+    abbr -a org "bash ~/code/shell/org.sh"
+    abbr -a p "sudo pacman"
+    abbr -a pws "python -m http.server"
+    abbr -a s "sudo systemctl"
+    abbr -a ß "proxychains"
+    abbr -a y "yay"
     # Set environment variables
     set -Ux SHELL /usr/bin/fish
     set -Ux EDITOR nvim
@@ -149,10 +147,10 @@ fish() {
 
 system() {
     printf "\nConfiguring systemd services...\n\n"
-    sudo systemctl enable NetworkManager
-    sudo systemctl enable cronie
     sudo systemctl enable bluetooth
+    sudo systemctl enable cronie
     sudo systemctl enable gdm
+    sudo systemctl enable NetworkManager
 }
 
 gnome() {
@@ -218,8 +216,11 @@ domisc() {
     # Get ix.io binary
     sudo curl -s ix.io/client > /usr/local/bin/ix
     sudo chmod +x /usr/bin/ix
-    # Turn on pacman color
-    sudo echo "Color" >> /etc/pacman.conf
+    # Turn on pacman & yay color
+    sed -i "s/^#Color/Color/" /etc/pacman.conf
+    # Remove beep
+    sudo rmmod pcspkr
+	sudo echo "blacklist pcspkr" > /etc/modprobe.d/nobeep.conf
     # nvim init.vim
     printf "syntax on\nset number\nset encoding=utf-8\nset nocompatible\nset clipboard=unnamedplus\n" > ~/.config/nvim/init.vim
     # .tmux.conf
@@ -237,8 +238,6 @@ purge() {
 firewall() {
     printf "\nConfiguring firewall...\n\n"
     sudo ufw default deny
-    # sshd
-    sudo ufw allow 54191
     # transmission
     sudo ufw allow Transmission
     # syncthing
@@ -261,6 +260,7 @@ setupssh() {
     printf "\nConfiguring SSH\n\n"
     read -rp "port? : " sshport
     printf "Port $sshport\nPermitRootLogin no\nMaxAuthTries 2\nMaxSessions 2\nPubkeyAuthetication yes\nAuthorizedKeysFile .ssh/authorized_keys\nPasswordAuthentication no\nPermitEmptyPasswords no\nChallengeResponseAuthentication no\nUsePAM yes\nPrintMotd no\nX11Forwarding no\nSubsystem sftp /usr/lib/ssh/sftp-server\n" > /etc/ssh/sshd_config
+    sudo ufw allow "$sshport"
     sudo systemctl start sshd
     sudo systemctl enable sshd
 }
@@ -288,5 +288,5 @@ case $1 in
     setupssh)
         setupssh ;;
     *)
-        printf "\n./installarch.sh [option]\n firstrun: run this first\n postchroot: run this after chroot\n postreboot: run this after reboot\n purge: run this to remove packages\n(setupssh)\n\n" ;;
+        printf "\n./installarch.sh [option]\n firstrun: run this first\n postchroot: run this after chroot\n postreboot: run this after reboot\n purge: run this to remove packages\n (setupssh: set up ssh)\n\n" ;;
 esac
