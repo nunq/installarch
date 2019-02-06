@@ -3,10 +3,11 @@
 # For laptops:
 #   Disks: AHCI
 #   Secure Boot: off
-read -rp "choose version to use (master or dev)" ghbranch
-loadkeys de-latin1
+printf "\nHello, we're gonna install Arch together :D\n"
+read -rp "choose script version to use (master or dev) : " ghbranch
 curl -s https://raw.githubusercontent.com/hyphenc/installarch/$ghbranch/installarch.sh > installarch.sh
 chmod +x installarch.sh
+loadkeys de-latin1
 first() {
     printf "\nSetup internet access\n\n"
     ip link show
