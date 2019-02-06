@@ -3,9 +3,9 @@
 # For laptops:
 #   Disks: AHCI
 #   Secure Boot: off
-#
+read -rp "choose version to use (master or dev)" ghbranch
 loadkeys de-latin1
-curl -s https://raw.githubusercontent.com/hyphenc/installarch/dev/installarch.sh > installarch.sh
+curl -s https://raw.githubusercontent.com/hyphenc/installarch/$ghbranch/installarch.sh > installarch.sh
 chmod +x installarch.sh
 first() {
     printf "\nSetup internet access\n\n"
@@ -52,7 +52,7 @@ first() {
     mount "$bootpart" /mnt/boot
     printf "\nPacman configuration and pacstrap...\n\n"
     # Configure pacman mirrors
-    printf "Server = https://ftp.halifax.rwth-aachen.de/archlinux/\$repo/os/\$arch\nServer = http://archlinux.mirror.iphh.net/\$repo/os/\$arch\nServer = https://mirror.netcologne.de/archlinux/\$repo/os/\$arch\nServer = https://archlinux.nullpointer.io/\$repo/os/\$arch\nServer = http://ftp.uni-hannover.de/archlinux/\$repo/os/\$arch\n" | cat - /etc/pacman.d/mirrorlist > /etc/pacman.d/mirrorlist.new && mv /etc/pacman.d/mirrorlist.new /etc/pacman.d/mirrorlist
+    printf "Server = http://ftp.fau.de/archlinux/$repo/os/$arch\nServer = http://mirror.f4st.host/archlinux/$repo/os/$arch\nServer = https://ftp.halifax.rwth-aachen.de/archlinux/\$repo/os/\$arch\nServer = https://mirror.netcologne.de/archlinux/\$repo/os/\$arch\nServer = http://ftp.uni-hannover.de/archlinux/\$repo/os/\$arch\n" | cat - /etc/pacman.d/mirrorlist > /etc/pacman.d/mirrorlist.new && mv /etc/pacman.d/mirrorlist.new /etc/pacman.d/mirrorlist
     # Install base & base-devel and mandatory packages for further setup
     pacstrap /mnt base base-devel intel-ucode networkmanager git curl btrfs-progs nvim
     printf "\nConfiguring fstab...\n\n"
@@ -62,7 +62,6 @@ first() {
     printf "\nChrooting into /mnt..., please rerun this script with 'postchroot'\n\n"
     arch-chroot /mnt
 }
-
 postchroot() {
     printf "\nSetting up time...\n\n"
     rm /etc/localtime
@@ -103,7 +102,6 @@ postchroot() {
     exit
     reboot
 }
-
 installpkg() {
     printf "\nUpdating system...\n\n"
     sudo pacman -Syyu
@@ -114,7 +112,6 @@ installpkg() {
     printf "\nInstalling packages...\n\n"
     yay -S --needed --noconfirm $(curl -s https://gist.githubusercontent.com/hyphenc/88f4581ab471021cb782a049c27d2363/raw/c3def7ead28f54187c37b4571dcdbe4bdeb0bec7/pkgs.txt | tr "\n" " ")
 }
-
 fish() {
     printf "\nChanging default shell to fish\n\n"
     chsh -s /usr/bin/fish
@@ -144,7 +141,6 @@ fish() {
     set -Ux SHELL /usr/bin/fish
     set -Ux EDITOR nvim
 }
-
 system() {
     printf "\nConfiguring systemd services...\n\n"
     sudo systemctl enable bluetooth
@@ -152,7 +148,6 @@ system() {
     sudo systemctl enable gdm
     sudo systemctl enable NetworkManager
 }
-
 gnome() {
     printf "\nConfiguring gnome...\n\n"
     # General
@@ -201,7 +196,6 @@ gnome() {
     gsettings set org.gnome.desktop.sound allow-volume-above-100-percent true
     gsettings set org.gnome.system.location enabled false
 }
-
 domisc() {
     printf "\nConfiguring startup apps...\n\n"
     # Startup apps
@@ -210,8 +204,6 @@ domisc() {
     chmod 755 ~/.config/autostart
     printf "[Desktop Entry]\nName='syncthing'\nComment='Run syncthing'\nExec=nohup syncthing -no-browser -home='/home/nils/.config/syncthing'\nTerminal=false\nType=Application\n" > ~/.config/autostart/syncthing.desktop
     printf "[Desktop Entry]\nName='wipe image cache'\nComment='Run wipe image cache'\nExec='wipe -rf .cache/thumbnails/ ; wipe -rf .cache/sxiv/'\nTerminal=false\nType=Application\n" > ~/.config/autostart/wipeimagecache.desktop
-    # Install fonts?
-    #cp to ~/.fonts then fc-cache -f -v ?
     printf "\nConfiguring miscellaneous stuff...\n\n"
     # Get ix.io binary
     sudo curl -s ix.io/client > /usr/local/bin/ix
@@ -228,13 +220,11 @@ domisc() {
     # .gitconfig
     printf "[credential]\n\thelper = cache\n[user]\n\tname = hyphenc\n\temail = 46054695+hyphenc@users.noreply.github.com\n" > ~/.gitconfig
 }
-
 purge() {
+    #idk if this function will be removed later...
     printf "\nRemoving packages...\n\n"
-    ##TODO add link
     yay -Rsn $(curl -s http://ix.io/LINK | tr "\n" " ")
  }
-
 firewall() {
     printf "\nConfiguring firewall...\n\n"
     sudo ufw default deny
@@ -255,7 +245,6 @@ firewall() {
     sudo ufw --force enable
     sudo systemctl enable ufw
 }
-
 setupssh() {
     printf "\nConfiguring SSH\n\n"
     read -rp "port? : " sshport
@@ -264,12 +253,10 @@ setupssh() {
     sudo systemctl start sshd
     sudo systemctl enable sshd
 }
-
 finished() {
     printf "\nconsider:\n Changing root shell to fish\n Enabling ssh with argument 'setupssh' \n Setting user password in gnome (to log in with gdm)\n Setting up email in Evolution"
     printf "\nDone with setup. Have fun!\n\n"
 }
-
 case $1 in
     firstrun)
         first ;;
