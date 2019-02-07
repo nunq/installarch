@@ -53,7 +53,7 @@ first() {
     # Configure pacman mirrors
     printf "Server = https://ftp.halifax.rwth-aachen.de/archlinux/\$repo/os/\$arch\nServer = https://mirror.netcologne.de/archlinux/\$repo/os/\$arch\nServer = https://archlinux.nullpointer.io/\$repo/os/\$arch\nServer = http://ftp.uni-hannover.de/archlinux/\$repo/os/\$arch\n" | cat - /etc/pacman.d/mirrorlist > /etc/pacman.d/mirrorlist.new && mv /etc/pacman.d/mirrorlist.new /etc/pacman.d/mirrorlist
     # Install base & base-devel and mandatory packages for further setup
-    pacstrap /mnt base base-devel intel-ucode networkmanager git curl btrfs-progs nvim
+    pacstrap /mnt base base-devel intel-ucode networkmanager git curl btrfs-progs neovim
     printf "\nConfiguring fstab...\n\n"
     genfstab -L /mnt >> /mnt/etc/fstab
     printf "# !delete this!\n# Verify and adjust /mnt/etc/fstab\n# For all btrfs filesystems consider:\n# - Change relatime to noatime to reduce wear on SSD\n# - Adding discard to enable continuous TRIM for SSD\n# - (HHDs) Adding autodefrag to enable auto defragmentation\n# - Adding compress=lzo to use compression" >> /mnt/etc/fstab
