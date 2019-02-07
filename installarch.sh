@@ -41,11 +41,11 @@ first() {
     btrfs subvolume create /mnt/@snapshots
     # Mount btrfs subvolumes
     umount /mnt
-    mount -o subvol=@root /dev/mapper/luks /mnt
+    mount -o subvol=@root,compress=lzo /dev/mapper/luks /mnt
     mkdir /mnt/home
     mkdir /mnt/.snapshots
-    mount -o subvol=@home /dev/mapper/luks /mnt/home
-    mount -o subvol=@snapshots /dev/mapper/luks /mnt/.snapshots
+    mount -o subvol=@home,compress=lzo /dev/mapper/luks /mnt/home
+    mount -o subvol=@snapshots,compress=lzo /dev/mapper/luks /mnt/.snapshots
     # Mount EFI partition
     mkdir /mnt/boot
     mount "$bootpart" /mnt/boot
@@ -56,7 +56,7 @@ first() {
     pacstrap /mnt base base-devel intel-ucode networkmanager git curl btrfs-progs nvim
     printf "\nConfiguring fstab...\n\n"
     genfstab -L /mnt >> /mnt/etc/fstab
-    printf "# !delete this!\n# Verify and adjust /mnt/etc/fstab\n# For all btrfs filesystems consider:\n# - Change relatime to noatime to reduce wear on SSD\n# - Adding discard to enable continuous TRIM for SSD\n# - Adding autodefrag to enable automatic defragmentation" >> /mnt/etc/fstab
+    printf "# !delete this!\n# Verify and adjust /mnt/etc/fstab\n# For all btrfs filesystems consider:\n# - Change relatime to noatime to reduce wear on SSD\n# - Adding discard to enable continuous TRIM for SSD\n# - Adding autodefrag to enable automatic defragmentation\n# - Adding compress=lzo to use compression" >> /mnt/etc/fstab
     nano /mnt/etc/fstab
     printf "\nChrooting into /mnt..., please rerun this script with 'postchroot'\n\n"
     arch-chroot /mnt
@@ -266,7 +266,7 @@ scriptver() {
             curl -s https://raw.githubusercontent.com/hyphenc/installarch/dev/installarch.sh > installarch.sh
             chmod +x installarch.sh ;;
         *)
-            printf "\nError: options are 'master' and 'dev'\n" ;;
+            printf "\nError: options are 'master' and 'dev'\n\n" ;;
     esac
 }
 case $1 in
