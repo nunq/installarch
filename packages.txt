@@ -12,6 +12,7 @@ gimp
 gnome-tweaks
 libreoffice-fresh
 mpv
+newsboat
 nmap
 noto-fonts
 ntfs-3g
