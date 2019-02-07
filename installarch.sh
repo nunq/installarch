@@ -58,7 +58,7 @@ first() {
     genfstab -L /mnt >> /mnt/etc/fstab
     printf "# !delete this!\n# Verify and adjust /mnt/etc/fstab\n# For all btrfs filesystems consider:\n# - Change relatime to noatime to reduce wear on SSD\n# - Adding discard to enable continuous TRIM for SSD\n# - (HHDs) Adding autodefrag to enable auto defragmentation\n# - Adding compress=lzo to use compression" >> /mnt/etc/fstab
     nano /mnt/etc/fstab
-    printf "\nChrooting into /mnt..., please rerun this script with 'postchroot'\n\n"
+    printf "\nChrooting into /mnt... please rerun this script with 'postchroot'\n\n"
     arch-chroot /mnt
 }
 postchroot() {
@@ -83,7 +83,8 @@ postchroot() {
     passwd "$username"
     echo "$username ALL=(ALL) ALL" > /etc/sudoers.d/nils
     printf "\nConfiguring mkinitcpio...\n\n"
-    sed -i 's/^HOOKS=(.*/# --- !!! please check this !!! ---\nHOOKS=(base systemd autodetect modconf block keyboard sd-vconsole sd-encrypt filesystems fsck)/' /etc/mkinitcpio.conf
+    sed -i 's/^BINARIES=.*/BINARIES=("/usr/bin/btrfs")/' /etc/mkinitcpio.conf
+    sed -i 's/^HOOKS=.*/# --- !!! please check this !!! ---\nHOOKS=(base systemd autodetect modconf block keyboard sd-vconsole sd-encrypt filesystems fsck)/' /etc/mkinitcpio.conf
     nvim /etc/mkinitcpio.conf
     wait
     printf "\nRegenerating initrd img...\n\n"
@@ -93,13 +94,12 @@ postchroot() {
     bootctl --path=/boot install
     read -rp "root partition? : " rootpart
     luksuuid=$(cryptsetup luksUUID $rootpart)
-    printf "title\tArch Linux\nlinux\t/vmlinuz-linux\ninitrd\t/intel-ucode.img\ninitrd\t/intramfs-linux.img\noptions\trw luks.uuid=$luksuuid luks.name=$luksuuid=luks root=/dev/mapper/luks rootflags=subvol=@root\n" > /boot/loader/entries/arch.conf
+    printf "title\tArch Linux\nlinux\t/vmlinuz-linux\ninitrd\t/intel-ucode.img\ninitrd\t/initramfs-linux.img\noptions\trw luks.uuid=$luksuuid luks.name=$luksuuid=luks root=/dev/mapper/luks rootflags=subvol=@root\n" > /boot/loader/entries/arch.conf
     #Setting default bootloader entry
     printf "default arch\neditor no\nauto-entries 1\n" > /boot/loader/loader.conf
-    printf "\nRebooting..., please rerun this script with 'postreboot'\n\n"
+    printf "\nRebooting... please rerun this script with 'postreboot'\n\n"
     sleep 3
     exit
-    reboot
 }
 installpkg() {
     printf "\nUpdating system...\n\n"
