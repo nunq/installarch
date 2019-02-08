@@ -21,7 +21,7 @@ otf-fira-code
 pass
 proxychains
 pwgen
-python-pip3
+python-pip
 sshfs
 sxiv
 syncthing
@@ -31,7 +31,7 @@ texlive-latexextra
 texlive-science
 tmux
 tor
-transmission
+transmission-gtk
 ttf-liberation
 ufw
 wget

@@ -95,9 +95,13 @@ postchroot() {
     read -rp "root partition? : " rootpart
     luksuuid=$(cryptsetup luksUUID $rootpart)
     printf "title\tArch Linux\nlinux\t/vmlinuz-linux\ninitrd\t/intel-ucode.img\ninitrd\t/initramfs-linux.img\noptions\trw luks.uuid=$luksuuid luks.name=$luksuuid=luks root=/dev/mapper/luks rootflags=subvol=@root\n" > /boot/loader/entries/arch.conf
-    #Setting default bootloader entry
+    mkdir -p /etc/pacman.d/hooks/
+    printf "[Trigger]\nType = Package\nOperation = Upgrade\nTarget = systemd\n\n[Action]\nDescription = Updating systemd-boot\nWhen = PostTransaction\nExec = /usr/bin/bootctl update\n" > /etc/pacman.d/hooks/100-systemd-boot.hook
+    # Setting default bootloader entry
     printf "default arch\neditor no\nauto-entries 1\n" > /boot/loader/loader.conf
     printf "\nRebooting... please rerun this script with 'postreboot'\n\n"
+    # Enable networkmanager for internet after reboot
+    sudo systemctl enable NetworkManager
     sleep 3
     exit
 }
@@ -107,7 +111,8 @@ installpkg() {
     printf "\nInstalling yay...\n\n"
     git clone https://aur.archlinux.org/yay.git
     cd yay
-    makepkg -si
+    makepkg -si --noconfirm
+    cd
     printf "\nInstalling packages...\n\n"
     ## TODO dev needs to be changed to master beforing pulling into master
     yay -S --needed --noconfirm $(curl -s https://raw.githubusercontent.com/hyphenc/installarch/dev/packages.txt | tr "\n" " ")
@@ -115,6 +120,7 @@ installpkg() {
 fish() {
     printf "\nChanging default shell to fish\n\n"
     chsh -s /usr/bin/fish
+    wait
     printf "\nInstalling omf and configuring fish...\n\n"
     curl -sL https://get.oh-my.fish | fish
     omf install archlinux cd fish-spec omf agnoster shellder fonts
@@ -140,13 +146,6 @@ fish() {
     # Set environment variables
     set -Ux SHELL /usr/bin/fish
     set -Ux EDITOR nvim
-}
-system() {
-    printf "\nConfiguring systemd services...\n\n"
-    sudo systemctl enable bluetooth
-    sudo systemctl enable cronie
-    sudo systemctl enable gdm
-    sudo systemctl enable NetworkManager
 }
 gnome() {
     printf "\nConfiguring gnome...\n\n"
@@ -205,6 +204,10 @@ domisc() {
     printf "[Desktop Entry]\nName='syncthing'\nComment='Run syncthing'\nExec=nohup syncthing -no-browser -home='/home/nils/.config/syncthing'\nTerminal=false\nType=Application\n" > ~/.config/autostart/syncthing.desktop
     printf "[Desktop Entry]\nName='wipe image cache'\nComment='Run wipe image cache'\nExec='wipe -rf .cache/thumbnails/ ; wipe -rf .cache/sxiv/'\nTerminal=false\nType=Application\n" > ~/.config/autostart/wipeimagecache.desktop
     printf "\nConfiguring miscellaneous stuff...\n\n"
+    printf "\nConfiguring systemd services...\n\n"
+    sudo systemctl enable bluetooth
+    sudo systemctl enable cronie
+    sudo systemctl enable gdm
     # Get ix.io binary
     sudo curl -s ix.io/client > /usr/local/bin/ix
     sudo chmod +x /usr/bin/ix
@@ -277,7 +280,6 @@ case $1 in
     postreboot)
         installpkg
         fish
-        system
         gnome
         domisc
         firewall
