@@ -16,7 +16,7 @@ newsboat
 nmap
 noto-fonts
 ntfs-3g
-nvim
+neovim
 otf-fira-code
 pass
 proxychains

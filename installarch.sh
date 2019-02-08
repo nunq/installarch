@@ -53,13 +53,15 @@ first() {
     # Configure pacman mirrors
     printf "Server = https://ftp.halifax.rwth-aachen.de/archlinux/\$repo/os/\$arch\nServer = https://mirror.netcologne.de/archlinux/\$repo/os/\$arch\nServer = https://archlinux.nullpointer.io/\$repo/os/\$arch\nServer = http://ftp.uni-hannover.de/archlinux/\$repo/os/\$arch\n" | cat - /etc/pacman.d/mirrorlist > /etc/pacman.d/mirrorlist.new && mv /etc/pacman.d/mirrorlist.new /etc/pacman.d/mirrorlist
     # Install base & base-devel and mandatory packages for further setup
-    pacstrap /mnt base base-devel intel-ucode networkmanager git curl btrfs-progs neovim
+    pacstrap /mnt base base-devel intel-ucode networkmanager git curl btrfs-progs
     printf "\nConfiguring fstab...\n\n"
     genfstab -L /mnt >> /mnt/etc/fstab
     printf "# !delete this!\n# Verify and adjust /mnt/etc/fstab\n# For all btrfs filesystems consider:\n# - Change relatime to noatime to reduce wear on SSD\n# - Adding discard to enable continuous TRIM for SSD\n# - (HHDs) Adding autodefrag to enable auto defragmentation\n# - Adding compress=lzo to use compression" >> /mnt/etc/fstab
     nano /mnt/etc/fstab
     printf "\nChrooting into /mnt... please rerun this script with 'postchroot'\n\n"
-    arch-chroot /mnt
+    #test
+    #arch-chroot /mnt /bin/bash -c "curl -s https://raw.githubusercontent.com/hyphenc/installarch/dev/installarch.sh > installarch.sh; chmod +x installarch.sh; ./installarch.sh postchroot"
+    arch-chroot /mnt "./installarch.sh postchroot"
 }
 postchroot() {
     printf "\nSetting up time...\n\n"
@@ -84,8 +86,7 @@ postchroot() {
     echo "$username ALL=(ALL) ALL" > /etc/sudoers.d/nils
     printf "\nConfiguring mkinitcpio...\n\n"
     sed -i 's/^BINARIES=.*/BINARIES=("/usr/bin/btrfs")/' /etc/mkinitcpio.conf
-    sed -i 's/^HOOKS=.*/# --- !!! please check this !!! ---\nHOOKS=(base systemd autodetect modconf block keyboard sd-vconsole sd-encrypt filesystems fsck)/' /etc/mkinitcpio.conf
-    nvim /etc/mkinitcpio.conf
+    sed -i 's/^HOOKS=.*/HOOKS=(base systemd autodetect modconf block keyboard sd-vconsole sd-encrypt filesystems fsck)/' /etc/mkinitcpio.conf
     wait
     printf "\nRegenerating initrd img...\n\n"
     mkinitcpio -p linux
@@ -99,10 +100,9 @@ postchroot() {
     printf "[Trigger]\nType = Package\nOperation = Upgrade\nTarget = systemd\n\n[Action]\nDescription = Updating systemd-boot\nWhen = PostTransaction\nExec = /usr/bin/bootctl update\n" > /etc/pacman.d/hooks/100-systemd-boot.hook
     # Setting default bootloader entry
     printf "default arch\neditor no\nauto-entries 1\n" > /boot/loader/loader.conf
-    printf "\nRebooting... please rerun this script with 'postreboot'\n\n"
     # Enable networkmanager for internet after reboot
     sudo systemctl enable NetworkManager
-    sleep 3
+    printf "\nRebooting... please rerun this script with 'postreboot'\n\n"
     exit
 }
 installpkg() {
@@ -119,7 +119,7 @@ installpkg() {
 }
 fish() {
     printf "\nChanging default shell to fish\n\n"
-    chsh -s /usr/bin/fish
+    sudo chsh -s /usr/bin/fish
     wait
     printf "\nInstalling omf and configuring fish...\n\n"
     curl -sL https://get.oh-my.fish | fish
