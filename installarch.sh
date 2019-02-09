@@ -58,9 +58,14 @@ first() {
     pacstrap /mnt base base-devel intel-ucode networkmanager git curl btrfs-progs
     printf "\nConfiguring fstab...\n\n"
     genfstab -L /mnt >> /mnt/etc/fstab
-    printf "# !delete this!\n# Verify and adjust /mnt/etc/fstab\n# For all btrfs filesystems consider:\n# - Change relatime to noatime to reduce wear on SSD\n# - Adding discard to enable continuous TRIM for SSD\n# - (HHDs) Adding autodefrag to enable auto defragmentation\n# - Adding compress=lzo to use compression" >> /mnt/etc/fstab
-    nano /mnt/etc/fstab
-    printf "\nChrooting into /mnt... please rerun this script with 'postchroot'\n\n"
+    printf "# For all btrfs filesystems consider:\n# - Change relatime to noatime to reduce wear on SSD\n# - Adding discard to enable continuous TRIM for SSD\n# - (HHDs) Adding autodefrag to enable auto defragmentation\n# - Adding compress=lzo to use compression" >> /mnt/etc/fstab
+    read -t 4 -rp "Do you want to review fstab? (y/timeout) : " readvar
+    if [ "$readvar" == "y" ] ; then
+        nano /mnt/etc/fstab
+        wait
+        unset readvar
+    fi
+    printf "\nChrooting into /mnt..\n\n"
     arch-chroot /mnt /bin/bash -c "curl -s https://raw.githubusercontent.com/hyphenc/installarch/dev/installarch.sh > installarch.sh; chmod +x installarch.sh; ./installarch.sh postchroot"
 }
 postchroot() {
@@ -85,9 +90,14 @@ postchroot() {
     passwd "$username"
     echo "$username ALL=(ALL) ALL" > /etc/sudoers.d/nils
     printf "\nConfiguring mkinitcpio...\n\n"
-    sed -i 's/^BINARIES=.*/BINARIES=("/usr/bin/btrfs")/' /etc/mkinitcpio.conf
+    sed -i 's/^BINARIES=.*/BINARIES=("\/usr\/bin\/btrfs")/' /etc/mkinitcpio.conf
     sed -i 's/^HOOKS=.*/HOOKS=(base systemd autodetect modconf block keyboard sd-vconsole sd-encrypt filesystems fsck)/' /etc/mkinitcpio.conf
-    wait
+    read -t 4 -rp "Do you want to review mkinitcpio.conf? (y/timeout) : " readvar
+    if [ "$readvar" == "y" ] ; then
+        nano /etc/mkinitcpio.conf
+        wait
+        unset readvar
+    fi
     printf "\nRegenerating initrd img...\n\n"
     mkinitcpio -p linux
     printf "\nConfiguring systemd-boot...\n\n"
@@ -291,5 +301,5 @@ case $1 in
     scriptver)
         scriptver $2 ;;
     *)
-        printf "\n./installarch.sh [option]\n firstrun: run this first\n postchroot: run this after chroot\n postreboot: run this after reboot\n purge: run this to remove packages\n scriptver: set the 'script version'\n  (setupssh: set up ssh)\n\n" ;;
+        printf "\n./installarch.sh [option]\n firstrun: run this first\n postchroot: run this after chroot\n postreboot: run this after reboot\n purge: run this to remove packages\n setupssh: set up remote ssh access\n scriptver: set the 'script version'\n\n" ;;
 esac
