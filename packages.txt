@@ -57,6 +57,7 @@ gnome-session
 gnome-settings-daemon
 gnome-shell
 gnome-shell-extensions
+gnome-system-monitor
 gnome-terminal
 gnome-themes-extra
 gvfs

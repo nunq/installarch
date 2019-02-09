@@ -3,7 +3,9 @@
 # For laptops:
 #   Disks: AHCI
 #   Secure Boot: off
-loadkeys de-latin1
+if [[ $(id -u) -eq 0 ]] ; then
+    loadkeys de-latin1
+fi
 curl -s https://raw.githubusercontent.com/hyphenc/installarch/dev/installarch.sh > installarch.sh
 chmod +x installarch.sh
 first() {
@@ -59,9 +61,7 @@ first() {
     printf "# !delete this!\n# Verify and adjust /mnt/etc/fstab\n# For all btrfs filesystems consider:\n# - Change relatime to noatime to reduce wear on SSD\n# - Adding discard to enable continuous TRIM for SSD\n# - (HHDs) Adding autodefrag to enable auto defragmentation\n# - Adding compress=lzo to use compression" >> /mnt/etc/fstab
     nano /mnt/etc/fstab
     printf "\nChrooting into /mnt... please rerun this script with 'postchroot'\n\n"
-    #test
-    #arch-chroot /mnt /bin/bash -c "curl -s https://raw.githubusercontent.com/hyphenc/installarch/dev/installarch.sh > installarch.sh; chmod +x installarch.sh; ./installarch.sh postchroot"
-    arch-chroot /mnt "./installarch.sh postchroot"
+    arch-chroot /mnt /bin/bash -c "curl -s https://raw.githubusercontent.com/hyphenc/installarch/dev/installarch.sh > installarch.sh; chmod +x installarch.sh; ./installarch.sh postchroot"
 }
 postchroot() {
     printf "\nSetting up time...\n\n"
