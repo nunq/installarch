@@ -8,12 +8,12 @@ if [[ $(id -u) -eq 0 ]] ; then
 fi
 curl -s https://raw.githubusercontent.com/hyphenc/installarch/dev/installarch.sh > installarch.sh
 chmod +x installarch.sh
-first() {
+startscript() {
     printf "\nSetup internet access\n\n"
     ip link show
     read -rp "net interface? (to skip this, press enter): " netint
     # If $netint is empty, wifi-menu will fail, but that's ok.
-    wifi-menu $netint
+    wifi-menu "$netint"
     timedatectl set-ntp true
     printf "\nCreate partitions\n\n"
     lsblk
@@ -65,7 +65,7 @@ first() {
         wait
         unset readvar
     fi
-    printf "\nChrooting into /mnt..\n\n"
+    printf "\n\nChrooting into /mnt...\n\n"
     arch-chroot /mnt /bin/bash -c "curl -s https://raw.githubusercontent.com/hyphenc/installarch/dev/installarch.sh > installarch.sh; chmod +x installarch.sh; ./installarch.sh postchroot"
 }
 postchroot() {
@@ -73,20 +73,20 @@ postchroot() {
     rm /etc/localtime
     ln -s /usr/share/zoneinfo/Europe/Berlin /etc/localtime
     hwclock --systohc
-    echo "en_DK.UTF-8 UTF-8" | cat - /etc/locale.gen > /tmp/localegen && mv /tmp/localegen /etc/locale.gen
+    sed -i 's/^#en_DK.UTF-8 UTF-8/en_DK.UTF-8 UTF-8/' /etc/locale.gen
     locale-gen
     printf "\nSetting locale and keymap...\n\n"
     echo "LANG=en_DK.UTF-8" > /etc/locale.conf
     echo "KEYMAP=de" > /etc/vconsole.conf
-    printf "\nConfiguring hostname...\n\n"
+    printf "\Set hostname\n\n"
     read -rp "hostname? : " hostnamevar
     echo "$hostnamevar" > /etc/hostname
     curl -s https://raw.githubusercontent.com/StevenBlack/hosts/master/alternates/fakenews-gambling/hosts > /etc/hosts
     printf "\nSet root password\n\n"
     passwd
-    printf "\nAdding a normal user...\n\n"
+    printf "\nAdding a normal user\n\n"
     read -rp "username? : " username
-    useradd -m -G wheel $username
+    useradd -m -G wheel "$username"
     passwd "$username"
     echo "$username ALL=(ALL) ALL" > /etc/sudoers.d/nils
     printf "\nConfiguring mkinitcpio...\n\n"
@@ -98,13 +98,13 @@ postchroot() {
         wait
         unset readvar
     fi
-    printf "\nRegenerating initrd img...\n\n"
+    printf "\n\nRegenerating initrd img...\n\n"
     mkinitcpio -p linux
     printf "\nConfiguring systemd-boot...\n\n"
     # Setting up systemd-boot
     bootctl --path=/boot install
     read -rp "root partition? : " rootpart
-    luksuuid=$(cryptsetup luksUUID $rootpart)
+    luksuuid=$(cryptsetup luksUUID "$rootpart")
     printf "title\tArch Linux\nlinux\t/vmlinuz-linux\ninitrd\t/intel-ucode.img\ninitrd\t/initramfs-linux.img\noptions\trw luks.uuid=$luksuuid luks.name=$luksuuid=luks root=/dev/mapper/luks rootflags=subvol=@root\n" > /boot/loader/entries/arch.conf
     mkdir -p /etc/pacman.d/hooks/
     printf "[Trigger]\nType = Package\nOperation = Upgrade\nTarget = systemd\n\n[Action]\nDescription = Updating systemd-boot\nWhen = PostTransaction\nExec = /usr/bin/bootctl update\n" > /etc/pacman.d/hooks/100-systemd-boot.hook
@@ -113,23 +113,26 @@ postchroot() {
     # Enable networkmanager for internet after reboot
     sudo systemctl enable NetworkManager
     printf "\nRebooting... please rerun this script with 'postreboot'\n\n"
+    sleep 2
     exit
+    reboot
 }
 installpkg() {
     printf "\nUpdating system...\n\n"
     sudo pacman -Syyu
     printf "\nInstalling yay...\n\n"
     git clone https://aur.archlinux.org/yay.git
-    cd yay
+    cd yay || exit 1
     makepkg -si --noconfirm
-    cd
+    cd ~ || exit 1
+    rm -rf yay/
     printf "\nInstalling packages...\n\n"
     ## TODO dev needs to be changed to master beforing pulling into master
-    yay -S --needed --noconfirm $(curl -s https://raw.githubusercontent.com/hyphenc/installarch/dev/packages.txt | tr "\n" " ")
+    sudo yay -S --needed --noconfirm $(curl -s https://raw.githubusercontent.com/hyphenc/installarch/dev/packages.txt | tr "\n" " ")
 }
 fish() {
     printf "\nChanging default shell to fish\n\n"
-    sudo chsh -s /usr/bin/fish
+    sudo chsh -s /usr/bin/fish "$USER"
     wait
     printf "\nInstalling omf and configuring fish...\n\n"
     curl -sL https://get.oh-my.fish | fish
@@ -209,7 +212,6 @@ domisc() {
     printf "\nConfiguring startup apps...\n\n"
     # Startup apps
     mkdir -p ~/.config/autostart
-    chmod 700 ~/.config
     chmod 755 ~/.config/autostart
     printf "[Desktop Entry]\nName='syncthing'\nComment='Run syncthing'\nExec=nohup syncthing -no-browser -home='/home/nils/.config/syncthing'\nTerminal=false\nType=Application\n" > ~/.config/autostart/syncthing.desktop
     printf "[Desktop Entry]\nName='wipe image cache'\nComment='Run wipe image cache'\nExec='wipe -rf .cache/thumbnails/ ; wipe -rf .cache/sxiv/'\nTerminal=false\nType=Application\n" > ~/.config/autostart/wipeimagecache.desktop
@@ -219,7 +221,7 @@ domisc() {
     sudo systemctl enable cronie
     sudo systemctl enable gdm
     # Get ix.io binary
-    sudo curl -s ix.io/client > /usr/local/bin/ix
+    sudo curl -s ix.io/client > /usr/bin/ix
     sudo chmod +x /usr/bin/ix
     # Turn on pacman & yay color
     sed -i "s/^#Color/Color/" /etc/pacman.conf
@@ -261,13 +263,13 @@ firewall() {
 setupssh() {
     printf "\nConfiguring SSH\n\n"
     read -rp "port? : " sshport
-    printf "Port $sshport\nPermitRootLogin no\nMaxAuthTries 2\nMaxSessions 2\nPubkeyAuthetication yes\nAuthorizedKeysFile .ssh/authorized_keys\nPasswordAuthentication no\nPermitEmptyPasswords no\nChallengeResponseAuthentication no\nUsePAM yes\nPrintMotd no\nX11Forwarding no\nSubsystem sftp /usr/lib/ssh/sftp-server\n" > /etc/ssh/sshd_config
+    printf "Port %s\nPermitRootLogin no\nMaxAuthTries 2\nMaxSessions 2\nPubkeyAuthetication yes\nAuthorizedKeysFile .ssh/authorized_keys\nPasswordAuthentication no\nPermitEmptyPasswords no\nChallengeResponseAuthentication no\nUsePAM yes\nPrintMotd no\nX11Forwarding no\nSubsystem sftp /usr/lib/ssh/sftp-server\n" "$sshport" > /etc/ssh/sshd_config
     sudo ufw allow "$sshport"
     sudo systemctl start sshd
     sudo systemctl enable sshd
 }
 finished() {
-    printf "\nconsider:\n Changing root shell to fish\n Enabling ssh with argument 'setupssh' \n Setting user password in gnome (to log in with gdm)\n Setting up email in Evolution"
+    printf "\nConsider:\n Changing default shell to fish\n Enabling ssh with argument 'setupssh' \n Setting user password in gnome (to log in with gdm)\n Setting up email in Evolution"
     printf "\nDone with setup. Have fun!\n\n"
 }
 scriptver() {
@@ -283,8 +285,8 @@ scriptver() {
     esac
 }
 case $1 in
-    firstrun)
-        first ;;
+    start)
+        startscript ;;
     postchroot)
         postchroot ;;
     postreboot)
@@ -299,7 +301,7 @@ case $1 in
     setupssh)
         setupssh ;;
     scriptver)
-        scriptver $2 ;;
+        scriptver "$2" ;;
     *)
-        printf "\n./installarch.sh [option]\n firstrun: run this first\n postchroot: run this after chroot\n postreboot: run this after reboot\n purge: run this to remove packages\n setupssh: set up remote ssh access\n scriptver: set the 'script version'\n\n" ;;
+        printf "\n./installarch.sh [option]\n start: this is the first thing you run\n postreboot: run this after reboot\n purge: run this to remove packages\n setupssh: set up remote ssh access\n scriptver: set the 'script version'\n\n" ;;
 esac
