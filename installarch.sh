@@ -36,19 +36,18 @@ startscript() {
     # If $swappart is empty, mkswap will fail, but that's ok.
     mkswap "$swappart"
     printf "\nSetting up partitions...\n\n"
-    # Create btrfs subvolumes
+    # Create and mount btrfs subvolumes
     mount -t btrfs /dev/mapper/luks /mnt
     btrfs subvolume create /mnt/@root
     btrfs subvolume create /mnt/@home
     btrfs subvolume create /mnt/@snapshots
-    # Mount btrfs subvolumes
     umount /mnt
     mount -o subvol=@root,compress=lzo /dev/mapper/luks /mnt
     mkdir /mnt/home
     mkdir /mnt/.snapshots
     mount -o subvol=@home,compress=lzo /dev/mapper/luks /mnt/home
     mount -o subvol=@snapshots,compress=lzo /dev/mapper/luks /mnt/.snapshots
-    # Mount EFI partition
+    # Mount boot partition
     mkdir /mnt/boot
     mount "$bootpart" /mnt/boot
     printf "\nPacman configuration and pacstrap...\n\n"
@@ -61,9 +60,7 @@ startscript() {
     printf "# For all btrfs filesystems consider:\n# - Change relatime to noatime to reduce wear on SSD\n# - Adding discard to enable continuous TRIM for SSD\n# - (HHDs) Adding autodefrag to enable auto defragmentation\n# - Adding compress=lzo to use compression" >> /mnt/etc/fstab
     read -t 4 -rp "Do you want to review fstab? (y/timeout) : " readvar
     if [ "$readvar" == "y" ] ; then
-        nano /mnt/etc/fstab
-        wait
-        unset readvar
+        nano /mnt/etc/fstab ; wait ; unset readvar
     fi
     printf "\n\nChrooting into /mnt...\n\n"
     arch-chroot /mnt /bin/bash -c "curl -s https://raw.githubusercontent.com/hyphenc/installarch/dev/installarch.sh > installarch.sh; chmod +x installarch.sh; ./installarch.sh postchroot"
@@ -94,9 +91,7 @@ postchroot() {
     sed -i 's/^HOOKS=.*/HOOKS=(base systemd autodetect modconf block keyboard sd-vconsole sd-encrypt filesystems fsck)/' /etc/mkinitcpio.conf
     read -t 4 -rp "Do you want to review mkinitcpio.conf? (y/timeout) : " readvar
     if [ "$readvar" == "y" ] ; then
-        nano /etc/mkinitcpio.conf
-        wait
-        unset readvar
+        nano /etc/mkinitcpio.conf ; wait ; unset readvar
     fi
     printf "\n\nRegenerating initrd img...\n\n"
     mkinitcpio -p linux
@@ -110,7 +105,7 @@ postchroot() {
     printf "[Trigger]\nType = Package\nOperation = Upgrade\nTarget = systemd\n\n[Action]\nDescription = Updating systemd-boot\nWhen = PostTransaction\nExec = /usr/bin/bootctl update\n" > /etc/pacman.d/hooks/100-systemd-boot.hook
     # Setting default bootloader entry
     printf "default arch\neditor no\nauto-entries 1\n" > /boot/loader/loader.conf
-    # Enable networkmanager for internet after reboot
+    # Enable NetworkManager for internet access after reboot
     sudo systemctl enable NetworkManager
     printf "\nRebooting... please rerun this script with 'postreboot'\n\n"
     sleep 2
@@ -208,7 +203,7 @@ gnome() {
     gsettings set org.gnome.desktop.sound allow-volume-above-100-percent true
     gsettings set org.gnome.system.location enabled false
 }
-domisc() {
+miscconfig() {
     printf "\nConfiguring startup apps...\n\n"
     # Startup apps
     mkdir -p ~/.config/autostart
@@ -216,7 +211,6 @@ domisc() {
     printf "[Desktop Entry]\nName='syncthing'\nComment='Run syncthing'\nExec=nohup syncthing -no-browser -home='/home/nils/.config/syncthing'\nTerminal=false\nType=Application\n" > ~/.config/autostart/syncthing.desktop
     printf "[Desktop Entry]\nName='wipe image cache'\nComment='Run wipe image cache'\nExec='wipe -rf .cache/thumbnails/ ; wipe -rf .cache/sxiv/'\nTerminal=false\nType=Application\n" > ~/.config/autostart/wipeimagecache.desktop
     printf "\nConfiguring miscellaneous stuff...\n\n"
-    printf "\nConfiguring systemd services...\n\n"
     sudo systemctl enable bluetooth
     sudo systemctl enable cronie
     sudo systemctl enable gdm
@@ -236,7 +230,6 @@ domisc() {
     printf "[credential]\n\thelper = cache\n[user]\n\tname = hyphenc\n\temail = 46054695+hyphenc@users.noreply.github.com\n" > ~/.gitconfig
 }
 purge() {
-    #idk if this function will be removed later...
     printf "\nRemoving packages...\n\n"
     yay -Rsn $(curl -s http://ix.io/LINK | tr "\n" " ")
  }
@@ -248,10 +241,8 @@ firewall() {
     # syncthing
     sudo ufw allow syncthing
     sudo ufw allow syncthing-gui
-    # testing port
-    sudo ufw allow 8000
     # lan
-    sudo ufw allow from 192.168.0.0/24
+    sudo ufw allow from 192.168.178.0/24
     # kdeconnect
     sudo ufw allow 1714:1764/udp
     sudo ufw allow 1714:1764/tcp
@@ -293,7 +284,7 @@ case $1 in
         installpkg
         fish
         gnome
-        domisc
+        miscconfig
         firewall
         finished ;;
     purge)
