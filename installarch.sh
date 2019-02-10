@@ -1,13 +1,12 @@
 #!/usr/bin/bash
-# credit: https://gist.github.com/android10/3b36eb4bbb7e990a414ec4126e7f6b3f
+# some stuff is adapted from https://gist.github.com/android10/3b36eb4bbb7e990a414ec4126e7f6b3f
 # For laptops:
 #   Disks: AHCI
 #   Secure Boot: off
 if [[ $(id -u) -eq 0 ]] ; then
     loadkeys de-latin1
 fi
-curl -s https://raw.githubusercontent.com/hyphenc/installarch/dev/installarch.sh > installarch.sh
-chmod +x installarch.sh
+curl -s https://raw.githubusercontent.com/hyphenc/installarch/dev/installarch.sh > installarch.sh && chmod +x installarch.sh
 startscript() {
     printf "\nSetup internet access\n\n"
     ip link show
@@ -17,7 +16,7 @@ startscript() {
     timedatectl set-ntp true
     printf "\nCreate partitions\n\n"
     lsblk
-    printf "\nExample:\n1G EFI partition, hexcode ef00, label: boot\n4G Swap partition, hexcode 8200, label: swap\n*G Root partition, hexcode 8300, label: root\n\n"
+    printf "\nExample:\n1G boot partition, hexcode ef00, label: boot\n2G swap partition, hexcode 8200, label: swap\n*G root partition, hexcode 8300, label: root\n\n"
     cgdisk
     wait
     printf "\nDisk setup\n\n"
@@ -54,7 +53,7 @@ startscript() {
     # Configure pacman mirrors
     printf "Server = https://ftp.halifax.rwth-aachen.de/archlinux/\$repo/os/\$arch\nServer = https://mirror.netcologne.de/archlinux/\$repo/os/\$arch\nServer = https://archlinux.nullpointer.io/\$repo/os/\$arch\nServer = http://ftp.uni-hannover.de/archlinux/\$repo/os/\$arch\n" | cat - /etc/pacman.d/mirrorlist > /etc/pacman.d/mirrorlist.new && mv /etc/pacman.d/mirrorlist.new /etc/pacman.d/mirrorlist
     # Install base & base-devel and mandatory packages for further setup
-    pacstrap /mnt base base-devel intel-ucode networkmanager git curl btrfs-progs
+    pacstrap /mnt base base-devel btrfs-progs curl fish git intel-ucode networkmanager
     printf "\nConfiguring fstab...\n\n"
     genfstab -L /mnt >> /mnt/etc/fstab
     printf "# For all btrfs filesystems consider:\n# - Change relatime to noatime to reduce wear on SSD\n# - Adding discard to enable continuous TRIM for SSD\n# - (HHDs) Adding autodefrag to enable auto defragmentation\n# - Adding compress=lzo to use compression" >> /mnt/etc/fstab
@@ -62,7 +61,7 @@ startscript() {
     if [ "$readvar" == "y" ] ; then
         nano /mnt/etc/fstab ; wait ; unset readvar
     fi
-    printf "\n\nChrooting into /mnt...\n\n"
+    printf "\n\nChrooting into /mnt...\n"
     arch-chroot /mnt /bin/bash -c "curl -s https://raw.githubusercontent.com/hyphenc/installarch/dev/installarch.sh > installarch.sh; chmod +x installarch.sh; ./installarch.sh postchroot"
 }
 postchroot() {
@@ -72,10 +71,10 @@ postchroot() {
     hwclock --systohc
     sed -i 's/^#en_DK.UTF-8 UTF-8/en_DK.UTF-8 UTF-8/' /etc/locale.gen
     locale-gen
-    printf "\nSetting locale and keymap...\n\n"
+    printf "Setting locale and keymap...\n\n"
     echo "LANG=en_DK.UTF-8" > /etc/locale.conf
     echo "KEYMAP=de" > /etc/vconsole.conf
-    printf "\Set hostname\n\n"
+    printf "Set hostname\n\n"
     read -rp "hostname? : " hostnamevar
     echo "$hostnamevar" > /etc/hostname
     curl -s https://raw.githubusercontent.com/StevenBlack/hosts/master/alternates/fakenews-gambling/hosts > /etc/hosts
@@ -83,7 +82,7 @@ postchroot() {
     passwd
     printf "\nAdding a normal user\n\n"
     read -rp "username? : " username
-    useradd -m -G wheel "$username"
+    useradd -m -G wheel -s /usr/bin/fish "$username"
     passwd "$username"
     echo "$username ALL=(ALL) ALL" > /etc/sudoers.d/nils
     printf "\nConfiguring mkinitcpio...\n\n"
@@ -93,7 +92,7 @@ postchroot() {
     if [ "$readvar" == "y" ] ; then
         nano /etc/mkinitcpio.conf ; wait ; unset readvar
     fi
-    printf "\n\nRegenerating initrd img...\n\n"
+    printf "\n\nRegenerating initrd image...\n\n"
     mkinitcpio -p linux
     printf "\nConfiguring systemd-boot...\n\n"
     # Setting up systemd-boot
@@ -107,14 +106,12 @@ postchroot() {
     printf "default arch\neditor no\nauto-entries 1\n" > /boot/loader/loader.conf
     # Enable NetworkManager for internet access after reboot
     sudo systemctl enable NetworkManager
-    printf "\nRebooting... please rerun this script with 'postreboot'\n\n"
-    sleep 2
+    printf "\nPlease reboot and then rerun this script with 'postreboot'\n\n"
     exit
-    reboot
 }
 installpkg() {
     printf "\nUpdating system...\n\n"
-    sudo pacman -Syyu
+    sudo pacman -Syyu --noconfirm
     printf "\nInstalling yay...\n\n"
     git clone https://aur.archlinux.org/yay.git
     cd yay || exit 1
@@ -123,39 +120,9 @@ installpkg() {
     rm -rf yay/
     printf "\nInstalling packages...\n\n"
     ## TODO dev needs to be changed to master beforing pulling into master
-    sudo yay -S --needed --noconfirm $(curl -s https://raw.githubusercontent.com/hyphenc/installarch/dev/packages.txt | tr "\n" " ")
+    yay -S --needed --noconfirm $(curl -s https://raw.githubusercontent.com/hyphenc/installarch/dev/packages.txt | tr "\n" " ")
 }
-fish() {
-    printf "\nChanging default shell to fish\n\n"
-    sudo chsh -s /usr/bin/fish "$USER"
-    wait
-    printf "\nInstalling omf and configuring fish...\n\n"
-    curl -sL https://get.oh-my.fish | fish
-    omf install archlinux cd fish-spec omf agnoster shellder fonts
-    omf theme shellder
-    fonts install --available Inconsolata
-    # Fish-greeting func
-    printf "function fish_greeting\n\tprintf '\\\n fish\\\n'\nend\n" > ~/.config/fish/functions/fish_greeting.fish
-    # Fish abbreviations
-    abbr -a bm "bash ~/code/cmods/bm.sh"
-    abbr -a cdd "cd ~/Downloads"
-    abbr -a gaa "git add -A"
-    abbr -a gcm "git commit -m"
-    abbr -a gpo "git push origin"
-    abbr -a gst "git status"
-    abbr -a lsl "ls -l --block-size=M"
-    abbr -a news "newsboat"
-    abbr -a org "bash ~/code/shell/org.sh"
-    abbr -a p "sudo pacman"
-    abbr -a pws "python -m http.server"
-    abbr -a s "sudo systemctl"
-    abbr -a ß "proxychains"
-    abbr -a y "yay"
-    # Set environment variables
-    set -Ux SHELL /usr/bin/fish
-    set -Ux EDITOR nvim
-}
-gnome() {
+gnomeconfig() {
     printf "\nConfiguring gnome...\n\n"
     # General
     gsettings set org.gnome.settings-daemon.plugins.color night-light-enabled true
@@ -171,7 +138,7 @@ gnome() {
     gsettings set org.gnome.desktop.interface clock-show-seconds false
     gsettings set org.gnome.desktop.interface cursor-theme "Adwaita"
     gsettings set org.gnome.desktop.interface document-font-name "Liberation Serif 11"
-    gsettings set org.gnome.desktop.interface enable-animations
+    gsettings set org.gnome.desktop.interface enable-animations true
     gsettings set org.gnome.desktop.interface font-name "Fira Code 12"
     gsettings set org.gnome.desktop.interface gtk-theme "Equilux-compact"
     gsettings set org.gnome.desktop.interface icon-theme "Pop"
@@ -203,7 +170,7 @@ gnome() {
     gsettings set org.gnome.desktop.sound allow-volume-above-100-percent true
     gsettings set org.gnome.system.location enabled false
 }
-miscconfig() {
+userconfigs() {
     printf "\nConfiguring startup apps...\n\n"
     # Startup apps
     mkdir -p ~/.config/autostart
@@ -222,14 +189,24 @@ miscconfig() {
     # Remove beep
     sudo rmmod pcspkr
 	sudo echo "blacklist pcspkr" > /etc/modprobe.d/nobeep.conf
+    # Fish-greeting func
+    printf "function fish_greeting\n\tprintf '\\\n fish\\\n'\nend\n" > ~/.config/fish/functions/fish_greeting.fish
     # nvim init.vim
     printf "syntax on\nset number\nset encoding=utf-8\nset nocompatible\nset clipboard=unnamedplus\n" > ~/.config/nvim/init.vim
     # .tmux.conf
     printf "set-option -g prefix C-a\nunbind-key C-b\nbind-key C-a send-prefix\n# Use m to toggle mouse mode\nunbind m\nbind m setw mouse\nset -g status-left \" \"\nset -g status-right \"%H:%M:%S\"\" \"\nset -g status-fg colour231\nset -g status-bg colour234\n# more intuitive keybindings for splitting\nunbind %\nbind h split-window -v\nunbind '\"'\nbind v split-window -h\n#set -g window-status-format \"#I:#W\"\nset -g status-interval 1\n" > ~/.tmux.conf
     # .gitconfig
     printf "[credential]\n\thelper = cache\n[user]\n\tname = hyphenc\n\temail = 46054695+hyphenc@users.noreply.github.com\n" > ~/.gitconfig
+    # Fish shell setup
+    printf "\nInstalling omf and configuring fish...\n\n"
+    # Install and configure omf
+    fish -c "curl -sL https://get.oh-my.fish | fish && omf install archlinux cd fish-spec omf agnoster shellder fonts && omf theme shellder && fonts install --available Inconsolata"
+    # Fish abbreviations
+    fish -c 'abbr -a bm "bash ~/code/cmods/bm.sh"; abbr -a cdd "cd ~/Downloads"; abbr -a gaa "git add -A"; abbr -a gcm "git commit -m"; abbr -a gpo "git push origin"; abbr -a gst "git status"; abbr -a lsl "ls -l --block-size=M"; abbr -a news "newsboat"; abbr -a org "bash ~/code/shell/org.sh"; abbr -a p "sudo pacman"; abbr -a pws "python -m http.server"; abbr -a s "sudo systemctl"; abbr -a ß "proxychains"; abbr -a y "yay"'
+    # Set environment variables
+    fish -c "set -Ux SHELL /usr/bin/fish; set -Ux EDITOR nvim"
 }
-purge() {
+purgepkg() {
     printf "\nRemoving packages...\n\n"
     yay -Rsn $(curl -s http://ix.io/LINK | tr "\n" " ")
  }
@@ -266,11 +243,9 @@ finished() {
 scriptver() {
     case $1 in
         master)
-            curl -s https://raw.githubusercontent.com/hyphenc/installarch/master/installarch.sh > installarch.sh
-            chmod +x installarch.sh ;;
+            curl -s https://raw.githubusercontent.com/hyphenc/installarch/master/installarch.sh > installarch.sh && chmod +x installarch.sh ;;
         dev)
-            curl -s https://raw.githubusercontent.com/hyphenc/installarch/dev/installarch.sh > installarch.sh
-            chmod +x installarch.sh ;;
+            curl -s https://raw.githubusercontent.com/hyphenc/installarch/dev/installarch.sh > installarch.sh && chmod +x installarch.sh ;;
         *)
             printf "\nError: options are 'master' and 'dev'\n\n" ;;
     esac
@@ -282,13 +257,12 @@ case $1 in
         postchroot ;;
     postreboot)
         installpkg
-        fish
-        gnome
-        miscconfig
+        gnomeconfig
+        userconfigs
         firewall
         finished ;;
     purge)
-        purge ;;
+        purgepkg ;;
     setupssh)
         setupssh ;;
     scriptver)
