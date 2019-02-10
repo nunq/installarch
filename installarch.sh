@@ -57,7 +57,7 @@ startscript() {
     printf "\nConfiguring fstab...\n\n"
     genfstab -L /mnt >> /mnt/etc/fstab
     printf "# For all btrfs filesystems consider:\n# - Change relatime to noatime to reduce wear on SSD\n# - Adding discard to enable continuous TRIM for SSD\n# - (HHDs) Adding autodefrag to enable auto defragmentation\n# - Adding compress=lzo to use compression" >> /mnt/etc/fstab
-    read -t 4 -rp "Do you want to review fstab? (y/timeout) : " readvar
+    read -t 3 -rp "Do you want to review fstab? (y/timeout) : " readvar
     if [ "$readvar" == "y" ] ; then
         nano /mnt/etc/fstab ; wait ; unset readvar
     fi
@@ -88,7 +88,7 @@ postchroot() {
     printf "\nConfiguring mkinitcpio...\n\n"
     sed -i 's/^BINARIES=.*/BINARIES=("\/usr\/bin\/btrfs")/' /etc/mkinitcpio.conf
     sed -i 's/^HOOKS=.*/HOOKS=(base systemd autodetect modconf block keyboard sd-vconsole sd-encrypt filesystems fsck)/' /etc/mkinitcpio.conf
-    read -t 4 -rp "Do you want to review mkinitcpio.conf? (y/timeout) : " readvar
+    read -t 3 -rp "Do you want to review mkinitcpio.conf? (y/timeout) : " readvar
     if [ "$readvar" == "y" ] ; then
         nano /etc/mkinitcpio.conf ; wait ; unset readvar
     fi

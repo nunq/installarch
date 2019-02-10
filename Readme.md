@@ -1,5 +1,5 @@
 # installarch.sh
-A bash script that installs and configures Arch.
+A bash script that installs and configures Arch for me.
 
 ## Usage
 ```
