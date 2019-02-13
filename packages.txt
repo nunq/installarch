@@ -10,6 +10,7 @@ firefox-developer-edition
 fish
 gimp
 gnome-tweaks
+kitty
 libreoffice-fresh
 mpv
 newsboat
@@ -29,7 +30,6 @@ testdisk
 texlive-core
 texlive-latexextra
 texlive-science
-tmux
 tor
 transmission-gtk
 ttf-liberation
@@ -58,7 +58,6 @@ gnome-settings-daemon
 gnome-shell
 gnome-shell-extensions
 gnome-system-monitor
-gnome-terminal
 gnome-themes-extra
 gvfs
 gvfs-goa
@@ -91,7 +90,7 @@ gnome-appfolders-manager-git
 lampe
 menulibre
 pass-update
-pop-icon-theme-git
+pop-icon-theme-bin
 sxiv-rifle
 tor-browser
 ungoogled-chromium-bin

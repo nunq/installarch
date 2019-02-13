@@ -6,6 +6,7 @@
 if [[ $(id -u) -eq 0 ]] ; then
     loadkeys de-latin1
 fi
+## TODO dev needs to be changed to master beforing pulling into master
 curl -s https://raw.githubusercontent.com/hyphenc/installarch/dev/installarch.sh > installarch.sh && chmod +x installarch.sh
 startscript() {
     printf "\nSetup internet access\n\n"
@@ -33,7 +34,7 @@ startscript() {
     mkfs.btrfs -L luks /dev/mapper/luks
     printf "\nCreating (or not creating) swap space...\n\n"
     # If $swappart is empty, mkswap will fail, but that's ok.
-    mkswap "$swappart"
+    mkswap "$swappart" > /dev/null 2>&1
     printf "\nSetting up partitions...\n\n"
     # Create and mount btrfs subvolumes
     mount -t btrfs /dev/mapper/luks /mnt
@@ -58,10 +59,9 @@ startscript() {
     genfstab -L /mnt >> /mnt/etc/fstab
     printf "# For all btrfs filesystems consider:\n# - Change relatime to noatime to reduce wear on SSD\n# - Adding discard to enable continuous TRIM for SSD\n# - (HHDs) Adding autodefrag to enable auto defragmentation\n# - Adding compress=lzo to use compression" >> /mnt/etc/fstab
     read -t 3 -rp "Do you want to review fstab? (y/timeout) : " readvar
-    if [ "$readvar" == "y" ] ; then
-        nano /mnt/etc/fstab ; wait ; unset readvar
-    fi
+    if [ "$readvar" == "y" ] ; then nano /mnt/etc/fstab ; wait ; unset readvar ; fi
     printf "\n\nChrooting into /mnt...\n"
+    ## TODO dev needs to be changed to master beforing pulling into master
     arch-chroot /mnt /bin/bash -c "curl -s https://raw.githubusercontent.com/hyphenc/installarch/dev/installarch.sh > installarch.sh; chmod +x installarch.sh; ./installarch.sh postchroot"
 }
 postchroot() {
@@ -71,7 +71,7 @@ postchroot() {
     hwclock --systohc
     sed -i 's/^#en_DK.UTF-8 UTF-8/en_DK.UTF-8 UTF-8/' /etc/locale.gen
     locale-gen
-    printf "Setting locale and keymap...\n\n"
+    printf "\nSetting locale and keymap...\n\n"
     echo "LANG=en_DK.UTF-8" > /etc/locale.conf
     echo "KEYMAP=de" > /etc/vconsole.conf
     printf "Set hostname\n\n"
@@ -92,13 +92,14 @@ postchroot() {
     if [ "$readvar" == "y" ] ; then
         nano /etc/mkinitcpio.conf ; wait ; unset readvar
     fi
-    printf "\n\nRegenerating initrd image...\n\n"
+    printf "\n\nRegenerating initcpio image...\n\n"
     mkinitcpio -p linux
     printf "\nConfiguring systemd-boot...\n\n"
     # Setting up systemd-boot
-    bootctl --path=/boot install
+    lsblk -f
     read -rp "root partition? : " rootpart
     luksuuid=$(cryptsetup luksUUID "$rootpart")
+    bootctl --path=/boot install
     printf "title\tArch Linux\nlinux\t/vmlinuz-linux\ninitrd\t/intel-ucode.img\ninitrd\t/initramfs-linux.img\noptions\trw luks.uuid=$luksuuid luks.name=$luksuuid=luks root=/dev/mapper/luks rootflags=subvol=@root\n" > /boot/loader/entries/arch.conf
     mkdir -p /etc/pacman.d/hooks/
     printf "[Trigger]\nType = Package\nOperation = Upgrade\nTarget = systemd\n\n[Action]\nDescription = Updating systemd-boot\nWhen = PostTransaction\nExec = /usr/bin/bootctl update\n" > /etc/pacman.d/hooks/100-systemd-boot.hook
