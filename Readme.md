@@ -5,5 +5,5 @@ A bash script that installs and configures Arch for me.
 ```
 curl https://raw.githubusercontent.com/hyphenc/installarch/master/installarch.sh | bash
 # or (as a short link)
-curl -L https://v.gd/installarch | bash
+curl -L https://v.gd/insarch | bash
 ```

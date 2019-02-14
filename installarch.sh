@@ -200,9 +200,9 @@ userconfigs() {
     # Install and configure omf
     fish -c "curl -sL https://get.oh-my.fish | fish && omf install archlinux cd fish-spec omf agnoster shellder fonts && omf theme shellder && fonts install --available Inconsolata"
     # Fish abbreviations
-    fish -c 'abbr -a bm "bash ~/code/cmods/bm.sh"; abbr -a cdd "cd ~/Downloads"; abbr -a gaa "git add -A"; abbr -a gcm "git commit -S -m"; abbr -a gpo "git push origin"; abbr -a gst "git status"; abbr -a lsl "ls -l --block-size=M"; abbr -a news "newsboat"; abbr -a org "bash ~/code/shell/org.sh"; abbr -a p "sudo pacman"; abbr -a pws "python -m http.server"; abbr -a s "sudo systemctl"; abbr -a ß "proxychains"; abbr -a y "yay"'
+    fish -c 'abbr -a bm "bash ~/code/cmods/bm.sh"; abbr -a cdd "cd ~/Downloads"; abbr -a gaa "git add -A"; abbr -a gcm "git commit -S -m"; abbr -a gpo "git push origin"; abbr -a gst "git status"; abbr -a lsl "ls -l --block-size=M"; abbr -a news "newsboat"; abbr -a org "bash ~/code/shell/org.sh"; abbr -a p "sudo pacman"; abbr -a pws "python -m http.server"; abbr -a s "sudo systemctl"; abbr -a ß "proxychains"; abbr -a y "yay"; abbr -a cfg "git --git-dir=$HOME/.cfg/ --work-tree=$HOME"'
     # Set environment variables
-    fish -c "set -Ux SHELL /usr/bin/fish; set -Ux EDITOR nvim"
+    fish -c "set -Ux SHELL /usr/bin/fish; set -Ux EDITOR nvim; set -Ux BM_BMPATH $HOME/code/cmods/bm.html"
 }
 purgepkg() {
     printf "\nRemoving packages...\n\n"
