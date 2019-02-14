@@ -6,8 +6,7 @@
 if [[ $(id -u) -eq 0 ]] ; then
     loadkeys de-latin1
 fi
-## TODO dev needs to be changed to master beforing pulling into master
-curl -s https://raw.githubusercontent.com/hyphenc/installarch/dev/installarch.sh > installarch.sh && chmod +x installarch.sh
+curl -s https://raw.githubusercontent.com/hyphenc/installarch/master/installarch.sh > installarch.sh && chmod +x installarch.sh
 startscript() {
     printf "\nSetup internet access\n\n"
     ip link show
@@ -61,8 +60,7 @@ startscript() {
     read -t 3 -rp "Do you want to review fstab? (y/timeout) : " readvar
     if [ "$readvar" == "y" ] ; then nano /mnt/etc/fstab ; wait ; unset readvar ; fi
     printf "\n\nChrooting into /mnt...\n"
-    ## TODO dev needs to be changed to master beforing pulling into master
-    arch-chroot /mnt /bin/bash -c "curl -s https://raw.githubusercontent.com/hyphenc/installarch/dev/installarch.sh > installarch.sh; chmod +x installarch.sh; ./installarch.sh postchroot"
+    arch-chroot /mnt /bin/bash -c "curl -s https://raw.githubusercontent.com/hyphenc/installarch/master/installarch.sh > installarch.sh; chmod +x installarch.sh; ./installarch.sh postchroot"
 }
 postchroot() {
     printf "\nSetting up time...\n\n"
@@ -120,8 +118,7 @@ installpkg() {
     cd ~ || exit 1
     rm -rf yay/
     printf "\nInstalling packages...\n\n"
-    ## TODO dev needs to be changed to master beforing pulling into master
-    yay -S --needed --noconfirm $(curl -s https://raw.githubusercontent.com/hyphenc/installarch/dev/packages.txt | tr "\n" " ")
+    yay -S --needed --noconfirm $(curl -s https://raw.githubusercontent.com/hyphenc/installarch/master/packages.txt | tr "\n" " ")
 }
 gnomeconfig() {
     printf "\nConfiguring gnome...\n\n"
@@ -203,7 +200,7 @@ userconfigs() {
     # Install and configure omf
     fish -c "curl -sL https://get.oh-my.fish | fish && omf install archlinux cd fish-spec omf agnoster shellder fonts && omf theme shellder && fonts install --available Inconsolata"
     # Fish abbreviations
-    fish -c 'abbr -a bm "bash ~/code/cmods/bm.sh"; abbr -a cdd "cd ~/Downloads"; abbr -a gaa "git add -A"; abbr -a gcm "git commit -m"; abbr -a gpo "git push origin"; abbr -a gst "git status"; abbr -a lsl "ls -l --block-size=M"; abbr -a news "newsboat"; abbr -a org "bash ~/code/shell/org.sh"; abbr -a p "sudo pacman"; abbr -a pws "python -m http.server"; abbr -a s "sudo systemctl"; abbr -a ß "proxychains"; abbr -a y "yay"'
+    fish -c 'abbr -a bm "bash ~/code/cmods/bm.sh"; abbr -a cdd "cd ~/Downloads"; abbr -a gaa "git add -A"; abbr -a gcm "git commit -S -m"; abbr -a gpo "git push origin"; abbr -a gst "git status"; abbr -a lsl "ls -l --block-size=M"; abbr -a news "newsboat"; abbr -a org "bash ~/code/shell/org.sh"; abbr -a p "sudo pacman"; abbr -a pws "python -m http.server"; abbr -a s "sudo systemctl"; abbr -a ß "proxychains"; abbr -a y "yay"'
     # Set environment variables
     fish -c "set -Ux SHELL /usr/bin/fish; set -Ux EDITOR nvim"
 }
