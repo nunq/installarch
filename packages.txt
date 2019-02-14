@@ -89,6 +89,7 @@ gimp-plugin-resynthesizer
 gnome-appfolders-manager-git
 lampe
 menulibre
+paperkey
 pass-update
 pop-icon-theme-bin
 sxiv-rifle

@@ -147,9 +147,9 @@ gnomeconfig() {
     gsettings set org.gnome.desktop.interface show-battery-percentage true
     gsettings set org.gnome.shell.extensions.user-theme name "Equilux-compact"
     # Keybindings
-    gsettings set org.gnome.desktop.wm.keybindings minimize ["<Super>Down"]
-    gsettings set org.gnome.desktop.wm.keybindings show-desktop ['<Super>d']
-    gsettings set org.gnome.desktop.wm.keybindings switch-windows ['<Alt>Tab']
+    gsettings set org.gnome.desktop.wm.keybindings minimize "['<Super>Down']"
+    gsettings set org.gnome.desktop.wm.keybindings show-desktop "['<Super>d']"
+    gsettings set org.gnome.desktop.wm.keybindings switch-windows "['<Alt>Tab']"
     # Window Manager
     gsettings set org.gnome.desktop.wm.preferences action-double-click-titlebar 'toggle-maximize'
     gsettings set org.gnome.desktop.wm.preferences button-layout 'appmenu:minimize,maximize,close'
@@ -167,7 +167,7 @@ gnomeconfig() {
     gsettings set org.gnome.desktop.privacy remember-app-usage false
     gsettings set org.gnome.desktop.privacy report-technical-problems false
     gsettings set org.gnome.desktop.privacy send-software-usage-stats false
-    gsettings set org.gnome.desktop.search-providers disabled ["org.gnome.Nautilus.desktop","org.gnome.Terminal.desktop"]
+    gsettings set org.gnome.desktop.search-providers disabled "['org.gnome.Nautilus.desktop','org.gnome.Terminal.desktop']"
     gsettings set org.gnome.desktop.sound allow-volume-above-100-percent true
     gsettings set org.gnome.system.location enabled false
 }
@@ -183,21 +183,21 @@ userconfigs() {
     sudo systemctl enable cronie
     sudo systemctl enable gdm
     # Get ix.io binary
-    sudo curl -s ix.io/client > /usr/bin/ix
+    sudo curl -s ix.io/client -o /usr/bin/ix
     sudo chmod +x /usr/bin/ix
     # Turn on pacman & yay color
-    sed -i "s/^#Color/Color/" /etc/pacman.conf
+    sudo sed -i "s/^#Color/Color/" /etc/pacman.conf
     # Remove beep
     sudo rmmod pcspkr
-	sudo echo "blacklist pcspkr" > /etc/modprobe.d/nobeep.conf
+    sudo echo "blacklist pcspkr" > /etc/modprobe.d/nobeep.conf
     # Fish-greeting func
-    printf "function fish_greeting\n\tprintf '\\\n fish\\\n'\nend\n" > ~/.config/fish/functions/fish_greeting.fish
+    echo -e "function fish_greeting\n\tprintf '\\\n fish\\\n'\nend\n" > ~/.config/fish/functions/fish_greeting.fish
     # nvim init.vim
-    printf "syntax on\nset number\nset encoding=utf-8\nset nocompatible\nset clipboard=unnamedplus\n" > ~/.config/nvim/init.vim
+    echo -e "syntax on\nset number\nset encoding=utf-8\nset nocompatible\nset clipboard=unnamedplus" > ~/.config/nvim/init.vim
     # .tmux.conf
-    printf "set-option -g prefix C-a\nunbind-key C-b\nbind-key C-a send-prefix\n# Use m to toggle mouse mode\nunbind m\nbind m setw mouse\nset -g status-left \" \"\nset -g status-right \"%H:%M:%S\"\" \"\nset -g status-fg colour231\nset -g status-bg colour234\n# more intuitive keybindings for splitting\nunbind %\nbind h split-window -v\nunbind '\"'\nbind v split-window -h\n#set -g window-status-format \"#I:#W\"\nset -g status-interval 1\n" > ~/.tmux.conf
+    echo -e "set-option -g prefix C-a\nunbind-key C-b\nbind-key C-a send-prefix\n# Use m to toggle mouse mode\nunbind m\nbind m setw mouse\nset -g status-left \" \"\nset -g status-right \"%H:%M:%S\"\" \"\nset -g status-fg colour231\nset -g status-bg colour234\n# more intuitive keybindings for splitting\nunbind %\nbind h split-window -v\nunbind '\"'\nbind v split-window -h\nset -g status-interval 1" > ~/.tmux.conf
     # .gitconfig
-    printf "[credential]\n\thelper = cache\n[user]\n\tname = hyphenc\n\temail = 46054695+hyphenc@users.noreply.github.com\n" > ~/.gitconfig
+    echo -e "[credential]\n\thelper = cache\n[user]\n\tname = hyphenc\n\temail = 46054695+hyphenc@users.noreply.github.com" > ~/.gitconfig
     # Fish shell setup
     printf "\nInstalling omf and configuring fish...\n\n"
     # Install and configure omf
