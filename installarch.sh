@@ -8,11 +8,6 @@ if [[ $(id -u) -eq 0 ]] ; then
 fi
 curl -s https://raw.githubusercontent.com/hyphenc/installarch/master/installarch.sh > installarch.sh && chmod +x installarch.sh
 startscript() {
-    printf "\nSetup internet access\n\n"
-    ip link show
-    read -rp "net interface? (to skip this, press enter): " netint
-    # If $netint is empty, wifi-menu will fail, but that's ok.
-    wifi-menu "$netint"
     timedatectl set-ntp true
     printf "\nCreate partitions\n\n"
     lsblk
@@ -189,16 +184,13 @@ userconfigs() {
     sudo echo "blacklist pcspkr" > /etc/modprobe.d/nobeep.conf
     # Fish-greeting func
     echo -e "function fish_greeting\n\tprintf '\\\n fish\\\n'\nend\n" > ~/.config/fish/functions/fish_greeting.fish
-    # nvim init.vim
-    echo -e "syntax on\nset number\nset encoding=utf-8\nset nocompatible\nset clipboard=unnamedplus" > ~/.config/nvim/init.vim
-    # .tmux.conf
-    echo -e "set-option -g prefix C-a\nunbind-key C-b\nbind-key C-a send-prefix\n# Use m to toggle mouse mode\nunbind m\nbind m setw mouse\nset -g status-left \" \"\nset -g status-right \"%H:%M:%S\"\" \"\nset -g status-fg colour231\nset -g status-bg colour234\n# more intuitive keybindings for splitting\nunbind %\nbind h split-window -v\nunbind '\"'\nbind v split-window -h\nset -g status-interval 1" > ~/.tmux.conf
-    # .gitconfig
-    echo -e "[credential]\n\thelper = cache\n[user]\n\tname = hyphenc\n\temail = 46054695+hyphenc@users.noreply.github.com" > ~/.gitconfig
+    # Dotfiles 
+    mkdir ~/.cfg
+    git clone --bare https://github.com/hyphenc/dotfiles ~/.cfg/
+    git --git-dir=$HOME/.cfg/ --work-tree=$HOME config --local status.showUntrackedFiles no
+    git --git-dir=$HOME/.cfg/ --work-tree=$HOME checkout⏎
     # Fish shell setup
     printf "\nInstalling omf and configuring fish...\n\n"
-    # Install and configure omf
-    fish -c "curl -sL https://get.oh-my.fish | fish && omf install archlinux cd fish-spec omf agnoster shellder fonts && omf theme shellder && fonts install --available Inconsolata"
     # Fish abbreviations
     fish -c 'abbr -a bm "bash ~/code/cmods/bm.sh"; abbr -a cdd "cd ~/Downloads"; abbr -a gaa "git add -A"; abbr -a gcm "git commit -S -m"; abbr -a gpo "git push origin"; abbr -a gst "git status"; abbr -a lsl "ls -l --block-size=M"; abbr -a news "newsboat"; abbr -a org "bash ~/code/shell/org.sh"; abbr -a p "sudo pacman"; abbr -a pws "python -m http.server"; abbr -a s "sudo systemctl"; abbr -a ß "proxychains"; abbr -a y "yay"; abbr -a cfg "git --git-dir=$HOME/.cfg/ --work-tree=$HOME"'
     # Set environment variables
@@ -235,18 +227,8 @@ setupssh() {
     sudo systemctl enable sshd
 }
 finished() {
-    printf "\nConsider:\n Changing default shell to fish\n Enabling ssh with argument 'setupssh' \n Setting user password in gnome (to log in with gdm)\n Setting up email in Evolution"
+    printf "\nConsider:\n Changing default shell to fish\n Enabling ssh with argument 'setupssh' \n Setting user password in gnome (to log in with gdm)\n Setting up email in Evolution\n Installing omf (curl -sL https://get.oh-my.fish | fish)\n And configuring it (fish -c omf install archlinux cd agnoster shellder && omf theme agnoster)"
     printf "\nDone with setup. Have fun!\n\n"
-}
-scriptver() {
-    case $1 in
-        master)
-            curl -s https://raw.githubusercontent.com/hyphenc/installarch/master/installarch.sh > installarch.sh && chmod +x installarch.sh ;;
-        dev)
-            curl -s https://raw.githubusercontent.com/hyphenc/installarch/dev/installarch.sh > installarch.sh && chmod +x installarch.sh ;;
-        *)
-            printf "\nError: options are 'master' and 'dev'\n\n" ;;
-    esac
 }
 case $1 in
     start)
@@ -263,8 +245,6 @@ case $1 in
         purgepkg ;;
     setupssh)
         setupssh ;;
-    scriptver)
-        scriptver "$2" ;;
     *)
-        printf "\n./installarch.sh [option]\n start: this is the first thing you run\n postreboot: run this after reboot\n purge: run this to remove packages\n setupssh: set up remote ssh access\n scriptver: set the 'script version'\n\n" ;;
+        printf "\n./installarch.sh [option]\n start: this is the first thing you run\n postreboot: run this after reboot\n purge: run this to remove packages\n setupssh: set up remote ssh access\n\n" ;;
 esac
