@@ -1,6 +1,6 @@
 #!/usr/bin/bash
 # some stuff is adapted from https://gist.github.com/android10/3b36eb4bbb7e990a414ec4126e7f6b3f
-# For laptops:
+# Consider:
 #   Disks: AHCI
 #   Secure Boot: off
 if [[ $(id -u) -eq 0 ]] ; then
@@ -116,6 +116,9 @@ installpkg() {
     yay -S --needed --noconfirm $(curl -s https://raw.githubusercontent.com/hyphenc/installarch/master/packages.txt | tr "\n" " ")
 }
 gnomeconfig() {
+    printf "Installing gnome theme..."
+    git clone https://github.com/hyphenc/Equilux-compact
+    sudo mv Equilux-compact/ /usr/share/themes/
     printf "\nConfiguring gnome...\n\n"
     # General
     gsettings set org.gnome.settings-daemon.plugins.color night-light-enabled true
@@ -162,14 +165,9 @@ gnomeconfig() {
     gsettings set org.gnome.desktop.search-providers disabled "['org.gnome.Nautilus.desktop','org.gnome.Terminal.desktop']"
     gsettings set org.gnome.desktop.sound allow-volume-above-100-percent true
     gsettings set org.gnome.system.location enabled false
+    gsettings set org.gnome.desktop.peripherals.touchpad tap-to-click true
 }
 userconfigs() {
-    printf "\nConfiguring startup apps...\n\n"
-    # Startup apps
-    mkdir -p ~/.config/autostart
-    chmod 755 ~/.config/autostart
-    printf "[Desktop Entry]\nName='syncthing'\nComment='Run syncthing'\nExec=nohup syncthing -no-browser -home='/home/nils/.config/syncthing'\nTerminal=false\nType=Application\n" > ~/.config/autostart/syncthing.desktop
-    printf "[Desktop Entry]\nName='wipe image cache'\nComment='Run wipe image cache'\nExec='wipe -rf .cache/thumbnails/ ; wipe -rf .cache/sxiv/'\nTerminal=false\nType=Application\n" > ~/.config/autostart/wipeimagecache.desktop
     printf "\nConfiguring miscellaneous stuff...\n\n"
     sudo systemctl enable bluetooth
     sudo systemctl enable cronie
@@ -184,11 +182,13 @@ userconfigs() {
     sudo echo "blacklist pcspkr" > /etc/modprobe.d/nobeep.conf
     # Fish-greeting func
     echo -e "function fish_greeting\n\tprintf '\\\n fish\\\n'\nend\n" > ~/.config/fish/functions/fish_greeting.fish
+    # Cleanup
+    rm -r ~/Sync
     # Dotfiles 
     mkdir ~/.cfg
     git clone --bare https://github.com/hyphenc/dotfiles ~/.cfg/
     git --git-dir=$HOME/.cfg/ --work-tree=$HOME config --local status.showUntrackedFiles no
-    git --git-dir=$HOME/.cfg/ --work-tree=$HOME checkout⏎
+    git --git-dir=$HOME/.cfg/ --work-tree=$HOME checkout
     # Fish shell setup
     printf "\nInstalling omf and configuring fish...\n\n"
     # Fish abbreviations
@@ -196,10 +196,6 @@ userconfigs() {
     # Set environment variables
     fish -c "set -Ux SHELL /usr/bin/fish; set -Ux EDITOR nvim; set -Ux BM_BMPATH $HOME/code/cmods/bm.html"
 }
-purgepkg() {
-    printf "\nRemoving packages...\n\n"
-    yay -Rsn $(curl -s http://ix.io/LINK | tr "\n" " ")
- }
 firewall() {
     printf "\nConfiguring firewall...\n\n"
     sudo ufw default deny
@@ -227,7 +223,7 @@ setupssh() {
     sudo systemctl enable sshd
 }
 finished() {
-    printf "\nConsider:\n Changing default shell to fish\n Enabling ssh with argument 'setupssh' \n Setting user password in gnome (to log in with gdm)\n Setting up email in Evolution\n Installing omf (curl -sL https://get.oh-my.fish | fish)\n And configuring it (fish -c omf install archlinux cd agnoster shellder && omf theme agnoster)"
+    printf "\nConsider:\n Changing default shell to fish\n Enabling ssh with argument 'setupssh' \n Setting user password in gnome (to log in with gdm)\n Setting up email in Evolution\n Installing omf (curl -sL https://get.oh-my.fish | fish)\n And configuring it (fish -c omf install archlinux cd agnoster shellder && omf theme agnoster)\n running ./installarch later"
     printf "\nDone with setup. Have fun!\n\n"
 }
 case $1 in
@@ -237,14 +233,15 @@ case $1 in
         postchroot ;;
     postreboot)
         installpkg
-        gnomeconfig
         userconfigs
         firewall
         finished ;;
+    later)
+	gnomeconfig ;;
     purge)
         purgepkg ;;
     setupssh)
         setupssh ;;
     *)
-        printf "\n./installarch.sh [option]\n start: this is the first thing you run\n postreboot: run this after reboot\n purge: run this to remove packages\n setupssh: set up remote ssh access\n\n" ;;
+        printf "\n./installarch.sh [option]\n start: this is the first thing you run\n postreboot: run this after reboot\n purge: run this to remove packages\n setupssh: set up remote ssh access\n later: stuff you can run later\n\n" ;;
 esac
