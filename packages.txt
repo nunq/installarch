@@ -4,7 +4,6 @@ chrome-gnome-shell
 code
 cronie
 epson-inkjet-printer-escpr
-equilux-theme
 exfat-utils
 firefox-developer-edition
 fish
