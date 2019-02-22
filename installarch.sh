@@ -118,7 +118,11 @@ installpkg() {
 gnomeconfig() {
     printf "Installing gnome theme..."
     git clone https://github.com/hyphenc/Equilux-compact
+    sudo mkdir -p /usr/share/themes/
     sudo mv Equilux-compact/ /usr/share/themes/
+    cd /usr/share/themes/Equilux-compact/gnome-shell/
+    sudo glib-compile-resources --target=/usr/share/gnome-shell/gnome-shell-theme.gresource gnome-shell-theme.gresource.xml
+    cd ~
     printf "\nConfiguring gnome...\n\n"
     # General
     gsettings set org.gnome.settings-daemon.plugins.color night-light-enabled true
@@ -180,10 +184,6 @@ userconfigs() {
     # Remove beep
     sudo rmmod pcspkr
     sudo echo "blacklist pcspkr" > /etc/modprobe.d/nobeep.conf
-    # Fish-greeting func
-    echo -e "function fish_greeting\n\tprintf '\\\n fish\\\n'\nend\n" > ~/.config/fish/functions/fish_greeting.fish
-    # Cleanup
-    rm -r ~/Sync
     # Dotfiles 
     mkdir ~/.cfg
     git clone --bare https://github.com/hyphenc/dotfiles ~/.cfg/

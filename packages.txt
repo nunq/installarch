@@ -4,7 +4,6 @@ chrome-gnome-shell
 code
 cronie
 epson-inkjet-printer-escpr
-equilux-theme
 exfat-utils
 firefox-developer-edition
 fish
@@ -13,17 +12,17 @@ gnome-tweaks
 kitty
 libreoffice-fresh
 mpv
+neovim
 newsboat
 nmap
 noto-fonts
+noto-fonts-emoji
 ntfs-3g
-neovim
 otf-fira-code
 pass
 proxychains
 pwgen
 python-pip
-sshfs
 sxiv
 syncthing
 testdisk
@@ -34,6 +33,7 @@ tor
 transmission-gtk
 ttf-liberation
 ufw
+unrar
 wget
 wipe
 xdg-utils
