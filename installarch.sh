@@ -120,9 +120,9 @@ gnomeconfig() {
     git clone https://github.com/hyphenc/Equilux-compact
     sudo mkdir -p /usr/share/themes/
     sudo mv Equilux-compact/ /usr/share/themes/
-    cd /usr/share/themes/Equilux-compact/gnome-shell/
+    cd /usr/share/themes/Equilux-compact/gnome-shell/ || exit 1
     sudo glib-compile-resources --target=/usr/share/gnome-shell/gnome-shell-theme.gresource gnome-shell-theme.gresource.xml
-    cd ~
+    cd ~ || exit 1
     printf "\nConfiguring gnome...\n\n"
     # General
     gsettings set org.gnome.settings-daemon.plugins.color night-light-enabled true
@@ -166,7 +166,7 @@ gnomeconfig() {
     gsettings set org.gnome.desktop.privacy remember-app-usage false
     gsettings set org.gnome.desktop.privacy report-technical-problems false
     gsettings set org.gnome.desktop.privacy send-software-usage-stats false
-    gsettings set org.gnome.desktop.search-providers disabled "['org.gnome.Nautilus.desktop','org.gnome.Terminal.desktop']"
+    gsettings set org.gnome.desktop.search-providers disabled "['org.gnome.Nautilus.desktop']"
     gsettings set org.gnome.desktop.sound allow-volume-above-100-percent true
     gsettings set org.gnome.system.location enabled false
     gsettings set org.gnome.desktop.peripherals.touchpad tap-to-click true
@@ -183,7 +183,7 @@ userconfigs() {
     sudo sed -i "s/^#Color/Color/" /etc/pacman.conf
     # Remove beep
     sudo rmmod pcspkr
-    sudo echo "blacklist pcspkr" > /etc/modprobe.d/nobeep.conf
+    echo "blacklist pcspkr" | sudo tee /etc/modprobe.d/nobeep.conf
     # Dotfiles 
     mkdir ~/.cfg
     git clone --bare https://github.com/hyphenc/dotfiles ~/.cfg/
@@ -192,15 +192,13 @@ userconfigs() {
     # Fish shell setup
     printf "\nInstalling omf and configuring fish...\n\n"
     # Fish abbreviations
-    fish -c 'abbr -a bm "bash ~/code/cmods/bm.sh"; abbr -a cdd "cd ~/Downloads"; abbr -a gaa "git add -A"; abbr -a gcm "git commit -S -m"; abbr -a gpo "git push origin"; abbr -a gst "git status"; abbr -a lsl "ls -l --block-size=M"; abbr -a news "newsboat"; abbr -a org "bash ~/code/shell/org.sh"; abbr -a p "sudo pacman"; abbr -a pws "python -m http.server"; abbr -a s "sudo systemctl"; abbr -a ß "proxychains"; abbr -a y "yay"; abbr -a cfg "git --git-dir=$HOME/.cfg/ --work-tree=$HOME"'
+    fish -c 'abbr -a bm "bash ~/code/cmods/bm.sh"; abbr -a cdd "cd ~/Downloads"; abbr -a gaa "git add -A"; abbr -a gcm "git commit -S -m"; abbr -a gp "git push"; abbr -a gst "git status"; abbr -a lsl "ls -l --block-size=M"; abbr -a news "newsboat"; abbr -a org "bash ~/code/shell/org.sh"; abbr -a pws "python -m http.server"; abbr -a s "sudo systemctl"; abbr -a y "yay"; abbr -a cfg "git --git-dir=$HOME/.cfg/ --work-tree=$HOME"; abbr -a play "mpv -no-audio-display -shuffle"'
     # Set environment variables
     fish -c "set -Ux SHELL /usr/bin/fish; set -Ux EDITOR nvim; set -Ux BM_BMPATH $HOME/code/cmods/bm.html"
 }
 firewall() {
     printf "\nConfiguring firewall...\n\n"
     sudo ufw default deny
-    # transmission
-    sudo ufw allow Transmission
     # syncthing
     sudo ufw allow syncthing
     sudo ufw allow syncthing-gui
@@ -217,13 +215,12 @@ firewall() {
 setupssh() {
     printf "\nConfiguring SSH\n\n"
     read -rp "port? : " sshport
-    printf "Port %s\nPermitRootLogin no\nMaxAuthTries 2\nMaxSessions 2\nPubkeyAuthetication yes\nAuthorizedKeysFile .ssh/authorized_keys\nPasswordAuthentication no\nPermitEmptyPasswords no\nChallengeResponseAuthentication no\nUsePAM yes\nPrintMotd no\nX11Forwarding no\nSubsystem sftp /usr/lib/ssh/sftp-server\n" "$sshport" > /etc/ssh/sshd_config
+    printf "Port %s\nPermitRootLogin no\nMaxAuthTries 2\nMaxSessions 2\nPubkeyAuthetication yes\nAuthorizedKeysFile .ssh/authorized_keys\nPasswordAuthentication no\nPermitEmptyPasswords no\nChallengeResponseAuthentication no\nUsePAM yes\nPrintMotd no\nSubsystem sftp /usr/lib/ssh/sftp-server\n" "$sshport" > /etc/ssh/sshd_config
     sudo ufw allow "$sshport"
     sudo systemctl start sshd
     sudo systemctl enable sshd
 }
 finished() {
-    printf "\nConsider:\n Changing default shell to fish\n Enabling ssh with argument 'setupssh' \n Setting user password in gnome (to log in with gdm)\n Setting up email in Evolution\n Installing omf (curl -sL https://get.oh-my.fish | fish)\n And configuring it (fish -c omf install archlinux cd agnoster shellder && omf theme agnoster)\n running ./installarch later"
     printf "\nDone with setup. Have fun!\n\n"
 }
 case $1 in
@@ -238,8 +235,6 @@ case $1 in
         finished ;;
     later)
 	gnomeconfig ;;
-    purge)
-        purgepkg ;;
     setupssh)
         setupssh ;;
     *)

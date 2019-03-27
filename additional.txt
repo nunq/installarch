@@ -1,0 +1,48 @@
+# shell
+changing default shell to fish
+enabling ssh with arg 'setupssh'
+installing omf and packages (omf install archlinux cd agnoster && omf theme agnoster)
+
+# gnome
+running this again when in gnome with arg 'later'
+setting user password in gnome (to log in with gdm)
+setting up email in evolution
+
+## keyboard shortcuts
+ctrl+alt+t        kitty
+ctrl+alt+w        setbg.sh
+super+d           hide all normal windows
+print             save screenshot of an area to pictures 
+ctrl+print        fish -c "mv /home/nils/Pictures/*Screenshot* /home/nils/Downloads"
+ctrl+shift+print  fish -c "mv /home/nils/Downloads/*Screenshot* /home/nils/.local/share/Trash/files/"
+
+## extensions
+clipboard indicator             tudmotu
+customcorner                    eccheng
+dashtodock                      micheleg
+gsconnect                       andyholmes
+remove dropdown arrows          mpdeimos
+status area horizontal spacing  p91paul
+twitchlive panel                maweki
+user themes                     fmuellner
+
+# drivers
+
+## intel
+
+intel-ucode
+intel-undervolt    //laptop
+libva-intel-driver //laptop
+
+# sec
+
+## /etc/dnsmasq.conf
+no-resolv
+server=127.0.0.1#40
+listen-address=127.0.0.1
+...
+
+## /etc/dnscrypt-proxy/dnscrypt-proxy.toml
+server_names = ['opennic-ethservices', 'opennic-ethservices2']
+listen_addresses = ['127.0.0.1:40']
+require_dnssec = true
