@@ -189,6 +189,8 @@ userconfigs() {
     git clone --bare https://github.com/hyphenc/dotfiles ~/.cfg/
     git --git-dir=$HOME/.cfg/ --work-tree=$HOME config --local status.showUntrackedFiles no
     git --git-dir=$HOME/.cfg/ --work-tree=$HOME checkout
+    # Firefox user.js
+    curl -s https://gist.github.com/hyphenc/729d2d1dd021cfd18d7230eb26db3541 -o ~/.mozilla/firefox/*.default/prefs.js
     # Fish shell setup
     printf "\nInstalling omf and configuring fish...\n\n"
     # Fish abbreviations
