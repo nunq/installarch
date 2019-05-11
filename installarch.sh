@@ -117,6 +117,18 @@ installpkg() {
     rm -rf yay/
     printf "\nInstalling packages...\n\n"
     yay -S --needed --noconfirm $(curl -s https://raw.githubusercontent.com/hyphenc/installarch/master/packages.txt | tr "\n" " ")
+    # because it's a clipmenu depency
+    yay -Rsndd dmenu
+}
+buildpkg() {
+    printf "\nBuilding dwm and dmenu...\n"
+    mkdir -p code/proj
+    cd code/proj
+    git clone https://github.com/hyphenc/dmenu.git
+    git clone https://github.com/hyphenc/dwm.git
+    cd dmenu/; make; sudo make install
+    cd ../dwm/; make; sudo make install
+    cd ~ || exit 1
 }
 userconfigs() {
     printf "\nConfiguring miscellaneous stuff...\n\n"
@@ -175,6 +187,7 @@ case $1 in
         postchroot ;;
     postreboot)
         installpkg
+        buildpkg
         userconfigs
         firewall
         finished ;;
