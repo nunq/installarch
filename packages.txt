@@ -4,6 +4,8 @@ chrome-gnome-shell
 chromium-widevine
 code
 cronie
+dnscrypt-proxy
+dnsmasq
 epson-inkjet-printer-escpr
 exfat-utils
 firefox

@@ -3,6 +3,7 @@
 # Consider:
 #   Disks: AHCI
 #   Secure Boot: off
+# for initial network connection use netctl
 if [[ $(id -u) -eq 0 ]] ; then
     loadkeys de-latin1
 fi
@@ -48,7 +49,7 @@ startscript() {
     # Configure pacman mirrors
     printf "Server = https://ftp.halifax.rwth-aachen.de/archlinux/\$repo/os/\$arch\nServer = https://mirror.netcologne.de/archlinux/\$repo/os/\$arch\nServer = https://archlinux.nullpointer.io/\$repo/os/\$arch\nServer = http://ftp.uni-hannover.de/archlinux/\$repo/os/\$arch\n" | cat - /etc/pacman.d/mirrorlist > /etc/pacman.d/mirrorlist.new && mv /etc/pacman.d/mirrorlist.new /etc/pacman.d/mirrorlist
     # Install base & base-devel and mandatory packages for further setup
-    pacstrap /mnt base base-devel btrfs-progs curl fish git intel-ucode networkmanager
+    pacstrap /mnt base base-devel btrfs-progs curl fish git intel-ucode connman wpa_supplicant
     printf "\nConfiguring fstab...\n\n"
     genfstab -L /mnt >> /mnt/etc/fstab
     printf "# For all btrfs filesystems consider:\n# - Change relatime to noatime to reduce wear on SSD\n# - Adding discard to enable continuous TRIM for SSD\n# - (HHDs) Adding autodefrag to enable auto defragmentation\n# - Adding compress=lzo to use compression" >> /mnt/etc/fstab
@@ -81,6 +82,8 @@ postchroot() {
     printf "\nConfiguring mkinitcpio...\n\n"
     sed -i 's/^BINARIES=.*/BINARIES=("\/usr\/bin\/btrfs")/' /etc/mkinitcpio.conf
     sed -i 's/^HOOKS=.*/HOOKS=(base systemd autodetect modconf block keyboard sd-vconsole sd-encrypt filesystems fsck)/' /etc/mkinitcpio.conf
+		mkdir -p /etc/systemd/system/connman.service.d/
+		printf "[Service]\nExecStart=\nExecStart=/usr/bin/connmand -n -r\n" > /etc/systemd/system/connman.service.d/disable_dns_proxy.conf
     read -t 3 -rp "Do you want to review mkinitcpio.conf? (y/timeout) : " readvar
     if [ "$readvar" == "y" ] ; then
         nano /etc/mkinitcpio.conf ; wait ; unset readvar
@@ -98,8 +101,11 @@ postchroot() {
     printf "[Trigger]\nType = Package\nOperation = Upgrade\nTarget = systemd\n\n[Action]\nDescription = Updating systemd-boot\nWhen = PostTransaction\nExec = /usr/bin/bootctl update\n" > /etc/pacman.d/hooks/100-systemd-boot.hook
     # Setting default bootloader entry
     printf "default arch\neditor no\nauto-entries 1\n" > /boot/loader/loader.conf
-    # Enable NetworkManager for internet access after reboot
-    sudo systemctl enable NetworkManager
+    # Setup internet access with ConnMan
+		sudo systemctl start connman
+		connmanctl
+		wait
+    sudo systemctl enable connman
     printf "\nPlease reboot and then rerun this script with 'postreboot'\n\n"
     exit
 }
@@ -176,9 +182,6 @@ userconfigs() {
     sudo systemctl enable bluetooth
     sudo systemctl enable cronie
     sudo systemctl enable gdm
-    # Get ix.io binary
-    sudo curl -s ix.io/client -o /usr/bin/ix
-    sudo chmod +x /usr/bin/ix
     # Turn on pacman & yay color
     sudo sed -i "s/^#Color/Color/" /etc/pacman.conf
     # Remove beep
@@ -194,7 +197,7 @@ userconfigs() {
     # Fish shell setup
     printf "\nInstalling omf and configuring fish...\n\n"
     # Fish abbreviations
-    fish -c 'abbr -a bm "bash ~/code/cmods/bm.sh"; abbr -a cdd "cd ~/Downloads"; abbr -a gaa "git add -A"; abbr -a gcm "git commit -S -m"; abbr -a gp "git push"; abbr -a gst "git status"; abbr -a lsl "ls -l --block-size=M"; abbr -a news "newsboat"; abbr -a org "bash ~/code/shell/org.sh"; abbr -a pws "python -m http.server"; abbr -a s "sudo systemctl"; abbr -a y "yay"; abbr -a cfg "git --git-dir=$HOME/.cfg/ --work-tree=$HOME"; abbr -a play "mpv -no-audio-display -shuffle"'
+    fish -c 'abbr -a bm "bash ~/code/cmods/bm.sh"; abbr -a cdd "cd ~/Downloads"; abbr -a gaa "git add -A"; abbr -a gcm "git commit -S -m"; abbr -a gp "git push"; abbr -a gst "git status"; abbr -a lsl "ls -l --block-size=M"; abbr -a news "newsboat"; abbr -a org "bash ~/code/shell/org.sh"; abbr -a s "sudo systemctl"; abbr -a cfg "git --git-dir=$HOME/.cfg/ --work-tree=$HOME"; abbr -a play "mpv -no-audio-display -shuffle"; abbr -a bak "~/code/shell/backup.sh"; abbr -a st ~/code/minor/shelltwitch/shelltwitch.sh.priv"'
     # Set environment variables
     fish -c "set -Ux SHELL /usr/bin/fish; set -Ux EDITOR nvim; set -Ux BM_BMPATH $HOME/code/cmods/bm.html"
 }
@@ -236,7 +239,7 @@ case $1 in
         firewall
         finished ;;
     later)
-	gnomeconfig ;;
+        #gnomeconfig ;;
     setupssh)
         setupssh ;;
     *)
