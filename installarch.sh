@@ -35,13 +35,10 @@ startscript() {
     mount -t btrfs /dev/mapper/luks /mnt
     btrfs subvolume create /mnt/@root
     btrfs subvolume create /mnt/@home
-    btrfs subvolume create /mnt/@snapshots
     umount /mnt
     mount -o subvol=@root,compress=lzo /dev/mapper/luks /mnt
     mkdir /mnt/home
-    mkdir /mnt/.snapshots
     mount -o subvol=@home,compress=lzo /dev/mapper/luks /mnt/home
-    mount -o subvol=@snapshots,compress=lzo /dev/mapper/luks /mnt/.snapshots
     # Mount boot partition
     mkdir /mnt/boot
     mount "$bootpart" /mnt/boot
