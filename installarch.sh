@@ -126,8 +126,10 @@ buildpkg() {
     cd code/proj
     git clone https://github.com/hyphenc/dmenu.git
     git clone https://github.com/hyphenc/dwm.git
+    git clone https://github.com/hyphenc/xdm-simple.git
     cd dmenu/; make; sudo make install
     cd ../dwm/; make; sudo make install
+    cd ../xdm-simple/; ./install.sh
     cd ~ || exit 1
 }
 userconfigs() {
