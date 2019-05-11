@@ -1,8 +1,6 @@
-#!/usr/bin/bash
+#!/bin/bash
 # some stuff is adapted from https://gist.github.com/android10/3b36eb4bbb7e990a414ec4126e7f6b3f
-# Consider:
-#   Disks: AHCI
-#   Secure Boot: off
+# Consider ->Disks: AHCI, Secure Boot: off
 # for initial network connection use netctl
 if [[ $(id -u) -eq 0 ]] ; then
     loadkeys de-latin1
@@ -163,21 +161,9 @@ firewall() {
     sudo ufw allow syncthing-gui
     # lan
     sudo ufw allow from 192.168.178.0/24
-    # kdeconnect
-    sudo ufw allow 1714:1764/udp
-    sudo ufw allow 1714:1764/tcp
-    # enable
     sudo ufw status
     sudo ufw --force enable
     sudo systemctl enable ufw
-}
-setupssh() {
-    printf "\nConfiguring SSH\n\n"
-    read -rp "port? : " sshport
-    printf "Port %s\nPermitRootLogin no\nMaxAuthTries 2\nMaxSessions 2\nPubkeyAuthetication yes\nAuthorizedKeysFile .ssh/authorized_keys\nPasswordAuthentication no\nPermitEmptyPasswords no\nChallengeResponseAuthentication no\nUsePAM yes\nPrintMotd no\nSubsystem sftp /usr/lib/ssh/sftp-server\n" "$sshport" > /etc/ssh/sshd_config
-    sudo ufw allow "$sshport"
-    sudo systemctl start sshd
-    sudo systemctl enable sshd
 }
 finished() {
     printf "\nDone with setup. I'd recommend running .nothome/deploy and rebooting.\n\n"
@@ -193,8 +179,6 @@ case $1 in
         userconfigs
         firewall
         finished ;;
-    setupssh)
-        setupssh ;;
     *)
-        printf "\n./installarch.sh [option]\n start: this is the first thing you run\n postreboot: run this after reboot\n purge: run this to remove packages\n setupssh: set up remote ssh access\n later: stuff you can run later\n\n" ;;
+        printf "\n./installarch.sh [option]\n start: this is the first thing you run\n postreboot: run this after reboot\n\n" ;;
 esac
