@@ -121,67 +121,10 @@ installpkg() {
     printf "\nInstalling packages...\n\n"
     yay -S --needed --noconfirm $(curl -s https://raw.githubusercontent.com/hyphenc/installarch/master/packages.txt | tr "\n" " ")
 }
-gnomeconfig() {
-    printf "Installing gnome theme..."
-    git clone https://github.com/hyphenc/Equilux-compact
-    sudo mkdir -p /usr/share/themes/
-    sudo mv Equilux-compact/ /usr/share/themes/
-    cd /usr/share/themes/Equilux-compact/gnome-shell/ || exit 1
-    sudo glib-compile-resources --target=/usr/share/gnome-shell/gnome-shell-theme.gresource gnome-shell-theme.gresource.xml
-    cd ~ || exit 1
-    printf "\nConfiguring gnome...\n\n"
-    # General
-    gsettings set org.gnome.settings-daemon.plugins.color night-light-enabled true
-    gsettings set org.gnome.settings-daemon.plugins.color night-light-schedule-automatic true
-    gsettings set org.gnome.settings-daemon.plugins.power power-button-action suspend
-    gsettings set org.gnome.settings-daemon.plugins.power idle-dim true
-    gsettings set org.gnome.desktop.input-sources sources "[('xkb', 'de')]"
-    gsettings set org.gnome.system.locale region "en_DK.UTF-8"
-    # Interface
-    gsettings set org.gnome.desktop.calendar show-weekdate true
-    gsettings set org.gnome.desktop.datetime automatic-timezone true
-    gsettings set org.gnome.desktop.interface clock-format "24h"
-    gsettings set org.gnome.desktop.interface clock-show-seconds false
-    gsettings set org.gnome.desktop.interface cursor-theme "Adwaita"
-    gsettings set org.gnome.desktop.interface document-font-name "Liberation Serif 11"
-    gsettings set org.gnome.desktop.interface enable-animations true
-    gsettings set org.gnome.desktop.interface font-name "Fira Code 12"
-    gsettings set org.gnome.desktop.interface gtk-theme "Equilux-compact"
-    gsettings set org.gnome.desktop.interface icon-theme "Pop"
-    gsettings set org.gnome.desktop.interface monospace-font-name "Fira Code 11"
-    gsettings set org.gnome.desktop.interface show-battery-percentage true
-    gsettings set org.gnome.shell.extensions.user-theme name "Equilux-compact"
-    # Keybindings
-    gsettings set org.gnome.desktop.wm.keybindings minimize "['<Super>Down']"
-    gsettings set org.gnome.desktop.wm.keybindings show-desktop "['<Super>d']"
-    gsettings set org.gnome.desktop.wm.keybindings switch-windows "['<Alt>Tab']"
-    # Window Manager
-    gsettings set org.gnome.desktop.wm.preferences action-double-click-titlebar 'toggle-maximize'
-    gsettings set org.gnome.desktop.wm.preferences button-layout 'appmenu:minimize,maximize,close'
-    gsettings set org.gnome.desktop.wm.preferences raise-on-click true
-    # Nautilus
-    gsettings set org.gnome.desktop.media-handling automount false
-    gsettings set org.gnome.nautilus.compression default-compression-format "tar.xz"
-    gsettings set org.gnome.nautilus.icon-view default-zoom-level standard
-    gsettings set org.gnome.nautilus.preferences open-folder-on-dnd-hover true
-    gsettings set org.gnome.nautilus.preferences show-create-link true
-    gsettings set org.gnome.nautilus.window-state initial-size "(880, 490)"
-    gsettings set org.gnome.nautilus.window-state sidebar-width 200
-    # Miscellaneous
-    gsettings set org.gnome.desktop.notifications show-in-lock-screen false
-    gsettings set org.gnome.desktop.privacy remember-app-usage false
-    gsettings set org.gnome.desktop.privacy report-technical-problems false
-    gsettings set org.gnome.desktop.privacy send-software-usage-stats false
-    gsettings set org.gnome.desktop.search-providers disabled "['org.gnome.Nautilus.desktop']"
-    gsettings set org.gnome.desktop.sound allow-volume-above-100-percent true
-    gsettings set org.gnome.system.location enabled false
-    gsettings set org.gnome.desktop.peripherals.touchpad tap-to-click true
-}
 userconfigs() {
     printf "\nConfiguring miscellaneous stuff...\n\n"
     sudo systemctl enable bluetooth
     sudo systemctl enable cronie
-    sudo systemctl enable gdm
     # Turn on pacman & yay color
     sudo sed -i "s/^#Color/Color/" /etc/pacman.conf
     # Remove beep
@@ -226,7 +169,7 @@ setupssh() {
     sudo systemctl enable sshd
 }
 finished() {
-    printf "\nDone with setup. Have fun!\n\n"
+    printf "\nDone with setup. I'd recommend running .nothome/deploy and rebooting.\n\n"
 }
 case $1 in
     start)
@@ -238,8 +181,6 @@ case $1 in
         userconfigs
         firewall
         finished ;;
-    later)
-        #gnomeconfig ;;
     setupssh)
         setupssh ;;
     *)
