@@ -136,6 +136,11 @@ userconfigs() {
     sudo systemctl enable cronie
     # Turn on pacman & yay color
     sudo sed -i "s/^#Color/Color/" /etc/pacman.conf
+    # pulseaudio: automatically switch to newly-connected devices
+    sudo printf "# automatically switch to newly-connected devices\nload-module module-switch-on-connect\n" >> /etc/pulse/default.pa
+    # secure slock
+    sudo printf "Section \"ServerFlags\"\n\tOption \"DontVTSwitch\" \"True\"\nEndSection\n\nSection \"ServerFlags\"\n\tOption \"DontZap\"      \"True\"\n
+EndSection\n" >> /etc/X11/xorg.conf
     # Remove beep
     sudo rmmod pcspkr
     echo "blacklist pcspkr" | sudo tee /etc/modprobe.d/nobeep.conf
