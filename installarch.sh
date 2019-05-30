@@ -73,7 +73,7 @@ postchroot() {
     read -rp "username? : " username
     useradd -m -G wheel -s /usr/bin/fish "$username"
     passwd "$username"
-    echo "$username ALL=(ALL) ALL" > /etc/sudoers.d/nils
+    echo "$username ALL=(ALL) ALL" > /etc/sudoers.d/$username
     printf "\nConfiguring mkinitcpio...\n\n"
     sed -i 's/^BINARIES=.*/BINARIES=("\/usr\/bin\/btrfs")/' /etc/mkinitcpio.conf
     sed -i 's/^HOOKS=.*/HOOKS=(base systemd autodetect modconf block keyboard sd-vconsole sd-encrypt filesystems fsck)/' /etc/mkinitcpio.conf
@@ -115,7 +115,7 @@ installpkg() {
     rm -rf yay/
     printf "\nInstalling packages...\n\n"
     yay -S --needed --noconfirm $(curl -s https://raw.githubusercontent.com/hyphenc/installarch/master/packages.txt | tr "\n" " ")
-    # because it's a clipmenu depency
+    # because it's a clipmenu dependency
     yay -Rsndd dmenu
 }
 buildpkg() {
@@ -144,19 +144,28 @@ EndSection\n" >> /etc/X11/xorg.conf
     # Remove beep
     sudo rmmod pcspkr
     echo "blacklist pcspkr" | sudo tee /etc/modprobe.d/nobeep.conf
-    # Dotfiles 
+    # Dotfiles
+    printf "\nDeploying dotfiles\n"
+    cd ~
     mkdir ~/.cfg
     git clone --bare https://github.com/hyphenc/dotfiles ~/.cfg/
     git --git-dir=$HOME/.cfg/ --work-tree=$HOME config --local status.showUntrackedFiles no
     git --git-dir=$HOME/.cfg/ --work-tree=$HOME checkout
-    # Firefox user.js
-    curl -s https://gist.github.com/hyphenc/729d2d1dd021cfd18d7230eb26db3541 -o ~/.mozilla/firefox/*.default/prefs.js
+    cd .other/
+    bash ./deploy
+    wait
+    cd ../
     # Fish shell setup
-    printf "\nInstalling omf and configuring fish...\n\n"
+    printf "\nConfiguring fish shell...\n\n"
     # Fish abbreviations
-    fish -c 'abbr -a bm "bash ~/code/cmods/bm.sh"; abbr -a cdd "cd ~/Downloads"; abbr -a gaa "git add -A"; abbr -a gcm "git commit -S -m"; abbr -a gp "git push"; abbr -a gst "git status"; abbr -a lsl "ls -l --block-size=M"; abbr -a news "newsboat"; abbr -a org "bash ~/code/shell/org.sh"; abbr -a s "sudo systemctl"; abbr -a cfg "git --git-dir=$HOME/.cfg/ --work-tree=$HOME"; abbr -a play "mpv -no-audio-display -shuffle"; abbr -a bak "~/code/shell/backup.sh"; abbr -a st ~/code/minor/shelltwitch/shelltwitch.sh.priv"'
+    fish -c 'abbr -a cdd "cd ~/Downloads"; abbr -a gaa "git add -A"; abbr -a gcm "git commit -S -m"; abbr -a gp "git push"; abbr -a gst "git status"; abbr -a gdm "git diff master"; abbr -a lsl "ls -l --block-size=M"; abbr -a news "newsboat"; abbr -a s "sudo systemctl"; abbr -a cfg "git --git-dir=$HOME/.cfg/ --work-tree=$HOME"; abbr -a play "mpv -no-audio-display -shuffle"; abbr -a bak "~/code/shell/backup.sh"; abbr -a st ~/code/minor/shelltwitch/shelltwitch.sh.priv"; abbr -a mail "~/.scripts/mail"; abbr -a hue "~/code/proj/huec/hue"'
     # Set environment variables
     fish -c "set -Ux SHELL /usr/bin/fish; set -Ux EDITOR nvim; set -Ux BM_BMPATH $HOME/code/cmods/bm.html"
+    # Properly configure pacman mirrors
+    printf "\nProperly configuring pacman mirrors...\n"
+    sudo curl "https://www.archlinux.org/mirrorlist/?country=all&protocol=http&protocol=https&ip_version=4" -o /etc/pacman.d/mirrorlist.bak
+    awk '/^## Germany$/{f=1}f==0{next}/^$/{exit}{print substr($0, 2)}' /etc/pacman.d/mirrorlist.bak | sudo tee /etc/pacman.d/mirrorlist.bak
+    rankmirrors -n 6 /etc/pacman.d/mirrorlist.bak | sudo tee /etc/pacman.d/mirrorlist
 }
 firewall() {
     printf "\nConfiguring firewall...\n\n"

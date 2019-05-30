@@ -39,7 +39,6 @@ p7zip
 paperkey
 pass
 pass-update
-patch
 pkgconf
 pulsemixer
 pwgen
