@@ -77,8 +77,8 @@ postchroot() {
     printf "\nConfiguring mkinitcpio...\n\n"
     sed -i 's/^BINARIES=.*/BINARIES=("\/usr\/bin\/btrfs")/' /etc/mkinitcpio.conf
     sed -i 's/^HOOKS=.*/HOOKS=(base systemd autodetect modconf block keyboard sd-vconsole sd-encrypt filesystems fsck)/' /etc/mkinitcpio.conf
-		mkdir -p /etc/systemd/system/connman.service.d/
-		printf "[Service]\nExecStart=\nExecStart=/usr/bin/connmand -n -r\n" > /etc/systemd/system/connman.service.d/disable_dns_proxy.conf
+    mkdir -p /etc/systemd/system/connman.service.d/
+    printf "[Service]\nExecStart=\nExecStart=/usr/bin/connmand -n -r\n" > /etc/systemd/system/connman.service.d/disable_dns_proxy.conf
     read -t 3 -rp "Do you want to review mkinitcpio.conf? (y/timeout) : " readvar
     if [ "$readvar" == "y" ] ; then
         nano /etc/mkinitcpio.conf ; wait ; unset readvar
@@ -97,9 +97,9 @@ postchroot() {
     # Setting default bootloader entry
     printf "default arch\neditor no\nauto-entries 1\n" > /boot/loader/loader.conf
     # Setup internet access with ConnMan
-		sudo systemctl start connman
-		connmanctl
-		wait
+    sudo systemctl start connman
+    connmanctl
+    wait
     sudo systemctl enable connman
     printf "\nPlease reboot and then rerun this script with 'postreboot'\n\n"
     exit
