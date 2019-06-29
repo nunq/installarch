@@ -114,7 +114,7 @@ installpkg() {
     cd ~ || exit 1
     rm -rf yay/
     printf "\nInstalling packages...\n\n"
-    yay -S --needed --noconfirm $(curl -s https://raw.githubusercontent.com/hyphenc/installarch/master/packages.txt | tr "\n" " ")
+    yay -S --needed --noconfirm --sudoloop $(curl -s https://raw.githubusercontent.com/hyphenc/installarch/master/packages.txt | tr "\n" " ")
     # because it's a clipmenu dependency
     yay -Rsndd dmenu
 }

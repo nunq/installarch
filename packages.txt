@@ -1,4 +1,3 @@
-acpi
 bc
 bluez
 bluez-utils
@@ -8,7 +7,6 @@ clipnotify
 code
 cronie
 dnscrypt-proxy
-dnsmasq
 downgrader-git
 dunst
 epson-inkjet-printer-escpr
@@ -56,6 +54,7 @@ tor-browser
 ttf-liberation
 ufw
 unrar
+unzip
 usbutils
 w3m
 wget
@@ -68,4 +67,5 @@ xorg-xdm
 xorg-xinit
 xorgproto
 youtube-dl
+zathura
 zathura-pdf-mupdf
