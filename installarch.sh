@@ -158,9 +158,9 @@ EndSection\n" | sudo tee -a /etc/X11/xorg.conf
     # Fish shell setup
     printf "\nConfiguring fish shell...\n\n"
     # Fish abbreviations
-    fish -c 'abbr -a cdd "cd ~/Downloads"; abbr -a gaa "git add -A"; abbr -a gcm "git commit -S -m"; abbr -a gp "git push"; abbr -a gst "git status"; abbr -a gdm "git diff master"; abbr -a lsl "ls -l --block-size=M"; abbr -a news "newsboat"; abbr -a s "sudo systemctl"; abbr -a cfg "git --git-dir=$HOME/.cfg/ --work-tree=$HOME"; abbr -a play "mpv -no-audio-display -shuffle"; abbr -a bak "~/code/shell/backup.sh"; abbr -a st ~/code/minor/shelltwitch/shelltwitch.sh.priv"; abbr -a mail "~/.scripts/mail"; abbr -a hue "~/code/proj/huec/hue"'
+    fish -c 'abbr -a cdd "cd ~/Downloads"; abbr -a gaa "git add -A"; abbr -a gcm "git commit -S -m"; abbr -a gp "git push"; abbr -a gst "git status"; abbr -a gdm "git diff master"; abbr -a lsl "ls -l --block-size=M"; abbr -a cfg "git --git-dir=$HOME/.cfg/ --work-tree=$HOME"; abbr -a play "mpv -no-audio-display -shuffle"; abbr -a bak "~/code/shell/backup.sh"; abbr -a st ~/code/minor/shelltwitch/shelltwitch.sh.priv"; abbr -a mail "~/.scripts/mail"; abbr -a hue "~/code/proj/huec/hue"'
     # Set environment variables
-    fish -c "set -Ux SHELL /usr/bin/fish; set -Ux EDITOR nvim; set -Ux BM_BMPATH $HOME/code/cmods/bm.html"
+    fish -c "set -Ux SHELL /usr/bin/fish; set -Ux EDITOR nvim"
     # Properly configure pacman mirrors
     printf "\nProperly configuring pacman mirrors...\n"
     sudo curl "https://www.archlinux.org/mirrorlist/?country=all&protocol=http&protocol=https&ip_version=4" -o /etc/pacman.d/mirrorlist.bak
