@@ -1,6 +1,5 @@
 #!/bin/bash
 # some stuff is adapted from https://gist.github.com/android10/3b36eb4bbb7e990a414ec4126e7f6b3f
-# Consider ->Disks: AHCI, Secure Boot: off
 # for initial network connection use netctl
 if [[ $(id -u) -eq 0 ]] ; then
     loadkeys de-latin1
@@ -136,14 +135,12 @@ userconfigs() {
     sudo systemctl enable cronie
     # Turn on pacman & yay color
     sudo sed -i "s/^#Color/Color/" /etc/pacman.conf
-    # pulseaudio: automatically switch to newly-connected devices
+    # Pulseaudio: automatically switch to newly-connected devices
     printf "# automatically switch to newly-connected devices\nload-module module-switch-on-connect\n" | sudo tee -a /etc/pulse/default.pa
-    # secure slock
-    printf "Section \"ServerFlags\"\n\tOption \"DontVTSwitch\" \"True\"\nEndSection\n\nSection \"ServerFlags\"\n\tOption \"DontZap\"      \"True\"\n
-EndSection\n" | sudo tee -a /etc/X11/xorg.conf
+    # Secure slock
+    printf "Section \"ServerFlags\"\n\tOption \"DontVTSwitch\" \"True\"\nEndSection\n\nSection \"ServerFlags\"\n\tOption \"DontZap\" \"True\"\nEndSection\n" | sudo tee -a /etc/X11/xorg.conf
     # Remove beep
     sudo rmmod pcspkr
-    echo "blacklist pcspkr" | sudo tee /etc/modprobe.d/nobeep.conf
     # Dotfiles
     printf "\nDeploying dotfiles\n"
     cd ~
@@ -158,7 +155,7 @@ EndSection\n" | sudo tee -a /etc/X11/xorg.conf
     # Fish shell setup
     printf "\nConfiguring fish shell...\n\n"
     # Fish abbreviations
-    fish -c 'abbr -a cdd "cd ~/Downloads"; abbr -a gaa "git add -A"; abbr -a gcm "git commit -S -m"; abbr -a gp "git push"; abbr -a gst "git status"; abbr -a gdm "git diff master"; abbr -a lsl "ls -l --block-size=M"; abbr -a cfg "git --git-dir=$HOME/.cfg/ --work-tree=$HOME"; abbr -a play "mpv -no-audio-display -shuffle"; abbr -a bak "~/code/shell/backup.sh"; abbr -a st ~/code/minor/shelltwitch/shelltwitch.sh.priv"; abbr -a mail "~/.scripts/mail"; abbr -a hue "~/code/proj/huec/hue"'
+    fish -c 'abbr -a cdd "cd ~/Downloads"; abbr -a gaa "git add -A"; abbr -a gcm "git commit -m"; abbr -a gp "git push"; abbr -a gst "git status"; abbr -a gdm "git diff master"; abbr -a lsl "ls -l --block-size=M"; abbr -a cfg "git --git-dir=$HOME/.cfg/ --work-tree=$HOME"; abbr -a play "mpv -no-audio-display -shuffle"; abbr -a st ~/code/proj/shelltwitch/shelltwitch.sh.priv"; abbr -a mail "~/.scripts/mail"; abbr -a hue "~/code/proj/huec/hue"'
     # Set environment variables
     fish -c "set -Ux SHELL /usr/bin/fish; set -Ux EDITOR nvim"
     # Properly configure pacman mirrors
@@ -166,11 +163,9 @@ EndSection\n" | sudo tee -a /etc/X11/xorg.conf
     sudo curl "https://www.archlinux.org/mirrorlist/?country=all&protocol=http&protocol=https&ip_version=4" -o /etc/pacman.d/mirrorlist.bak
     awk '/^## Germany$/{f=1}f==0{next}/^$/{exit}{print substr($0, 2)}' /etc/pacman.d/mirrorlist.bak | sudo tee /etc/pacman.d/mirrorlist.bak
     rankmirrors -n 6 /etc/pacman.d/mirrorlist.bak | sudo tee /etc/pacman.d/mirrorlist
-}
-firewall() {
+    # Firewall
     printf "\nConfiguring firewall...\n\n"
     sudo ufw default deny
-    # syncthing
     sudo ufw allow syncthing
     sudo ufw allow syncthing-gui
     # lan
@@ -178,9 +173,6 @@ firewall() {
     sudo ufw status
     sudo ufw --force enable
     sudo systemctl enable ufw
-}
-finished() {
-    printf "\nDone with setup. I'd recommend running .nothome/deploy and rebooting.\n\n"
 }
 case $1 in
     start)
@@ -191,8 +183,7 @@ case $1 in
         installpkg
         buildpkg
         userconfigs
-        firewall
-        finished ;;
+        printf "\nDone.\n\n" ;;
     *)
         printf "\n./installarch.sh [option]\n start: this is the first thing you run\n postreboot: run this after reboot\n\n" ;;
 esac

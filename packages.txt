@@ -42,9 +42,11 @@ pulsemixer
 pwgen
 python
 redshift-minimal
+rsync
 signal-desktop-bin
 simple-mtpfs
 slock
+steghide
 sxiv
 syncthing
 texlive-core
