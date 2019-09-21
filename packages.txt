@@ -4,12 +4,10 @@ bluez-utils
 borg
 clipmenu
 clipnotify
-code
 cronie
 dnscrypt-proxy
 downgrader-git
 dunst
-epson-inkjet-printer-escpr
 exfat-utils
 feh
 firefox
