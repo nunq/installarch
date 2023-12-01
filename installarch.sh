@@ -65,7 +65,6 @@ postchroot() {
     printf "Set hostname\n\n"
     read -rp "hostname? : " hostnamevar
     echo "$hostnamevar" > /etc/hostname
-    curl -s https://raw.githubusercontent.com/StevenBlack/hosts/master/alternates/fakenews-gambling/hosts > /etc/hosts
     printf "\nSet root password\n\n"
     passwd
     printf "\nAdding a normal user\n\n"
