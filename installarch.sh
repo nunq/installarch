@@ -100,9 +100,8 @@ installpkg() {
     cd ~ || exit 1
     rm -rf yay/
     printf "\nInstalling packages...\n\n"
-    yay -S --needed --noconfirm --sudoloop $(curl -s https://raw.githubusercontent.com/hyphenc/installarch/master/packages.txt | tr "\n" " ")
-    # because it's a clipmenu dependency
-    yay -Rsndd dmenu
+    yay -S --needed --noconfirm --sudoloop $(curl -s https://raw.githubusercontent.com/nunq/dotfiles/main/.other/packages.txt | tr "\n" " ")
+    yay -Rsndd dmenu # because it's a clipmenu dependency
 }
 buildpkg() {
     printf "\nBuilding dwm and dmenu...\n"
@@ -124,15 +123,13 @@ userconfigs() {
     sudo sed -i "s/^#Color/Color/" /etc/pacman.conf
     # Pulseaudio: automatically switch to newly-connected devices
     printf "# automatically switch to newly-connected devices\nload-module module-switch-on-connect\n" | sudo tee -a /etc/pulse/default.pa
-    # Secure slock
-    printf "Section \"ServerFlags\"\n\tOption \"DontVTSwitch\" \"True\"\nEndSection\n\nSection \"ServerFlags\"\n\tOption \"DontZap\" \"True\"\nEndSection\n" | sudo tee -a /etc/X11/xorg.conf
     # Remove beep
     sudo rmmod pcspkr
     # Dotfiles
     printf "\nDeploying dotfiles\n"
     cd ~
     mkdir ~/.cfg
-    git clone --bare https://github.com/hyphenc/dotfiles ~/.cfg/
+    git clone --bare https://github.com/nunq/dotfiles ~/.cfg/
     git --git-dir=$HOME/.cfg/ --work-tree=$HOME config --local status.showUntrackedFiles no
     git --git-dir=$HOME/.cfg/ --work-tree=$HOME checkout
     cd .other/
@@ -141,8 +138,6 @@ userconfigs() {
     cd ../
     # Fish shell setup
     printf "\nConfiguring fish shell...\n\n"
-    # Fish abbreviations
-    fish -c 'abbr -a cdd "cd ~/Downloads"; abbr -a gaa "git add -A"; abbr -a gcm "git commit -m"; abbr -a gp "git push"; abbr -a gst "git status"; abbr -a gdm "git diff master"; abbr -a lsl "ls -l --block-size=M"; abbr -a cfg "git --git-dir=$HOME/.cfg/ --work-tree=$HOME"; abbr -a play "mpv -no-audio-display -shuffle"; abbr -a st ~/code/proj/shelltwitch/shelltwitch.sh.priv"; abbr -a mail "~/.scripts/mail"; abbr -a hue "~/code/proj/huec/hue"'
     # Set environment variables
     fish -c "set -Ux SHELL /usr/bin/fish; set -Ux EDITOR nvim"
     # Properly configure pacman mirrors
@@ -160,7 +155,8 @@ case $1 in
         installpkg
         buildpkg
         userconfigs
-        printf "\nDone.\n\n" ;;
+        printf "\nDone.\n\n"
+        printf "At this point you might want to restore crontabs, shell abbreviations, move over application-specific data (e.g. Firefox), etc.\n\n" ;;
     *)
         printf "\n./installarch.sh [option]\n start: this is the first thing you run\n postreboot: run this after reboot\n\n" ;;
 esac
