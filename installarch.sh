@@ -23,19 +23,12 @@ startscript() {
     cryptsetup luksFormat "$rootpart"
     printf "\nOpen LUKS encrypted partition\n\n"
     cryptsetup open "$rootpart" luks
-    mkfs.btrfs -L luks /dev/mapper/luks
+    mkfs.ext4 -L luks /dev/mapper/luks
     printf "\nCreating (or not creating) swap space...\n\n"
     # If $swappart is empty, mkswap will fail, but that's ok.
     mkswap "$swappart" > /dev/null 2>&1
     printf "\nSetting up partitions...\n\n"
-    # Create and mount btrfs subvolumes
-    mount -t btrfs /dev/mapper/luks /mnt
-    btrfs subvolume create /mnt/@root
-    btrfs subvolume create /mnt/@home
-    umount /mnt
-    mount -o subvol=@root,compress=lzo /dev/mapper/luks /mnt
-    mkdir /mnt/home
-    mount -o subvol=@home,compress=lzo /dev/mapper/luks /mnt/home
+    mount /dev/mapper/luks /mnt
     # Mount boot partition
     mkdir /mnt/boot
     mount "$bootpart" /mnt/boot
@@ -43,10 +36,9 @@ startscript() {
     # Configure pacman mirrors
     printf "Server = https://ftp.halifax.rwth-aachen.de/archlinux/\$repo/os/\$arch\nServer = https://mirror.netcologne.de/archlinux/\$repo/os/\$arch\nServer = https://archlinux.nullpointer.io/\$repo/os/\$arch\nServer = http://ftp.uni-hannover.de/archlinux/\$repo/os/\$arch\n" | cat - /etc/pacman.d/mirrorlist > /etc/pacman.d/mirrorlist.new && mv /etc/pacman.d/mirrorlist.new /etc/pacman.d/mirrorlist
     # Install base & base-devel and mandatory packages for further setup
-    pacstrap /mnt base base-devel btrfs-progs curl fish git intel-ucode connman wpa_supplicant
+    pacstrap /mnt base base-devel curl fish git intel-ucode connman wpa_supplicant
     printf "\nConfiguring fstab...\n\n"
     genfstab -L /mnt >> /mnt/etc/fstab
-    printf "# For all btrfs filesystems consider:\n# - Change relatime to noatime to reduce wear on SSD\n# - Adding discard to enable continuous TRIM for SSD\n# - (HHDs) Adding autodefrag to enable auto defragmentation\n# - Adding compress=lzo to use compression" >> /mnt/etc/fstab
     read -t 3 -rp "Do you want to review fstab? (y/timeout) : " readvar
     if [ "$readvar" == "y" ] ; then nano /mnt/etc/fstab ; wait ; unset readvar ; fi
     printf "\n\nChrooting into /mnt...\n"
@@ -73,7 +65,6 @@ postchroot() {
     passwd "$username"
     echo "$username ALL=(ALL) ALL" > /etc/sudoers.d/$username
     printf "\nConfiguring mkinitcpio...\n\n"
-    sed -i 's/^BINARIES=.*/BINARIES=("\/usr\/bin\/btrfs")/' /etc/mkinitcpio.conf
     sed -i 's/^HOOKS=.*/HOOKS=(base systemd autodetect modconf block keyboard sd-vconsole sd-encrypt filesystems fsck)/' /etc/mkinitcpio.conf
     mkdir -p /etc/systemd/system/connman.service.d/
     printf "[Service]\nExecStart=\nExecStart=/usr/bin/connmand -n -r\n" > /etc/systemd/system/connman.service.d/disable_dns_proxy.conf
