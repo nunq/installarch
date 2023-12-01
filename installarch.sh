@@ -36,7 +36,7 @@ startscript() {
     # Configure pacman mirrors
     printf "Server = https://ftp.halifax.rwth-aachen.de/archlinux/\$repo/os/\$arch\nServer = https://mirror.netcologne.de/archlinux/\$repo/os/\$arch\nServer = https://archlinux.nullpointer.io/\$repo/os/\$arch\nServer = http://ftp.uni-hannover.de/archlinux/\$repo/os/\$arch\n" | cat - /etc/pacman.d/mirrorlist > /etc/pacman.d/mirrorlist.new && mv /etc/pacman.d/mirrorlist.new /etc/pacman.d/mirrorlist
     # Install base & base-devel and mandatory packages for further setup
-    pacstrap /mnt base base-devel curl fish git intel-ucode connman wpa_supplicant
+    pacstrap -K /mnt base base-devel linux linux-firmware sof-firmware neovim tmux curl fish git intel-ucode iwd man-db man-pages
     printf "\nConfiguring fstab...\n\n"
     genfstab -L /mnt >> /mnt/etc/fstab
     read -t 3 -rp "Do you want to review fstab? (y/timeout) : " readvar
@@ -66,8 +66,6 @@ postchroot() {
     echo "$username ALL=(ALL) ALL" > /etc/sudoers.d/$username
     printf "\nConfiguring mkinitcpio...\n\n"
     sed -i 's/^HOOKS=.*/HOOKS=(base systemd autodetect modconf block keyboard sd-vconsole sd-encrypt filesystems fsck)/' /etc/mkinitcpio.conf
-    mkdir -p /etc/systemd/system/connman.service.d/
-    printf "[Service]\nExecStart=\nExecStart=/usr/bin/connmand -n -r\n" > /etc/systemd/system/connman.service.d/disable_dns_proxy.conf
     read -t 3 -rp "Do you want to review mkinitcpio.conf? (y/timeout) : " readvar
     if [ "$readvar" == "y" ] ; then
         nano /etc/mkinitcpio.conf ; wait ; unset readvar
@@ -79,17 +77,16 @@ postchroot() {
     lsblk -f
     read -rp "root partition? : " rootpart
     luksuuid=$(cryptsetup luksUUID "$rootpart")
-    bootctl --path=/boot install
-    printf "title\tArch Linux\nlinux\t/vmlinuz-linux\ninitrd\t/intel-ucode.img\ninitrd\t/initramfs-linux.img\noptions\trw luks.uuid=$luksuuid luks.name=$luksuuid=luks root=/dev/mapper/luks rootflags=subvol=@root\n" > /boot/loader/entries/arch.conf
+    bootctl --boot-path=/boot install
+    printf "title\tArch Linux\nlinux\t/vmlinuz-linux\ninitrd\t/intel-ucode.img\ninitrd\t/initramfs-linux.img\noptions\trw luks.uuid=$luksuuid luks.name=$luksuuid=luks root=/dev/mapper/luks\n" > /boot/loader/entries/arch.conf
     mkdir -p /etc/pacman.d/hooks/
-    printf "[Trigger]\nType = Package\nOperation = Upgrade\nTarget = systemd\n\n[Action]\nDescription = Updating systemd-boot\nWhen = PostTransaction\nExec = /usr/bin/bootctl update\n" > /etc/pacman.d/hooks/100-systemd-boot.hook
+    printf "[Trigger]\nType = Package\nOperation = Upgrade\nTarget = systemd\n\n[Action]\nDescription = Updating systemd-boot\nWhen = PostTransaction\nExec = /usr/bin/systemctl restart systemd-boot-update.service\n" > /etc/pacman.d/hooks/100-systemd-boot.hook
     # Setting default bootloader entry
     printf "default arch\neditor no\nauto-entries 1\n" > /boot/loader/loader.conf
     # Setup internet access with ConnMan
-    sudo systemctl start connman
-    connmanctl
+    sudo systemctl enable --now iwd
+    iwctl
     wait
-    sudo systemctl enable connman
     printf "\nPlease reboot and then rerun this script with 'postreboot'\n\n"
     exit
 }
