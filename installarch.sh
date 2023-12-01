@@ -71,7 +71,7 @@ postchroot() {
     lsblk -f
     read -rp "root partition? : " rootpart
     luksuuid=$(cryptsetup luksUUID "$rootpart")
-    bootctl --boot-path=/boot install
+    bootctl --esp-path=/boot install # TODO is using --esp-path correct here?
     printf "title\tArch Linux\nlinux\t/vmlinuz-linux\ninitrd\t/intel-ucode.img\ninitrd\t/initramfs-linux.img\noptions\trw luks.uuid=$luksuuid luks.name=$luksuuid=luks root=/dev/mapper/luks\n" > /boot/loader/entries/arch.conf
     mkdir -p /etc/pacman.d/hooks/
     printf "[Trigger]\nType = Package\nOperation = Upgrade\nTarget = systemd\n\n[Action]\nDescription = Updating systemd-boot\nWhen = PostTransaction\nExec = /usr/bin/systemctl restart systemd-boot-update.service\n" > /etc/pacman.d/hooks/100-systemd-boot.hook
