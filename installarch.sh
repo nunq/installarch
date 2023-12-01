@@ -1,6 +1,6 @@
 #!/bin/bash
 # some stuff is adapted from https://gist.github.com/android10/3b36eb4bbb7e990a414ec4126e7f6b3f
-# for initial network connection use netctl
+# for initial network connection use iwctl (iwd)
 if [[ $(id -u) -eq 0 ]] ; then
     loadkeys de-latin1
 fi
@@ -9,7 +9,7 @@ startscript() {
     timedatectl set-ntp true
     printf "\nCreate partitions\n\n"
     lsblk
-    printf "\nExample:\n1G boot partition, hexcode ef00, label: boot\n2G swap partition, hexcode 8200, label: swap\n*G root partition, hexcode 8300, label: root\n\n"
+    printf "\nExample:\n1G boot partition, hexcode ef00, label: boot\n2G swap partition, hexcode 8200, label: swap\n*G root partition, hexcode 8300, label: root\n\n(maybe take a picture with your phone to remember the hexcodes)\n\nPlease enter the disk to edit (e.g. /dev/nvme0n1):\n\n"
     cgdisk
     wait
     printf "\nDisk setup\n\n"
@@ -39,8 +39,6 @@ startscript() {
     pacstrap -K /mnt base base-devel linux linux-firmware sof-firmware neovim tmux curl fish git intel-ucode iwd man-db man-pages
     printf "\nConfiguring fstab...\n\n"
     genfstab -L /mnt >> /mnt/etc/fstab
-    read -t 3 -rp "Do you want to review fstab? (y/timeout) : " readvar
-    if [ "$readvar" == "y" ] ; then nano /mnt/etc/fstab ; wait ; unset readvar ; fi
     printf "\n\nChrooting into /mnt...\n"
     arch-chroot /mnt /bin/bash -c "curl -s https://raw.githubusercontent.com/hyphenc/installarch/master/installarch.sh > installarch.sh; chmod +x installarch.sh; ./installarch.sh postchroot"
 }
@@ -66,10 +64,6 @@ postchroot() {
     echo "$username ALL=(ALL) ALL" > /etc/sudoers.d/$username
     printf "\nConfiguring mkinitcpio...\n\n"
     sed -i 's/^HOOKS=.*/HOOKS=(base systemd autodetect modconf block keyboard sd-vconsole sd-encrypt filesystems fsck)/' /etc/mkinitcpio.conf
-    read -t 3 -rp "Do you want to review mkinitcpio.conf? (y/timeout) : " readvar
-    if [ "$readvar" == "y" ] ; then
-        nano /etc/mkinitcpio.conf ; wait ; unset readvar
-    fi
     printf "\n\nRegenerating initcpio image...\n\n"
     mkinitcpio -p linux
     printf "\nConfiguring systemd-boot...\n\n"
@@ -83,10 +77,8 @@ postchroot() {
     printf "[Trigger]\nType = Package\nOperation = Upgrade\nTarget = systemd\n\n[Action]\nDescription = Updating systemd-boot\nWhen = PostTransaction\nExec = /usr/bin/systemctl restart systemd-boot-update.service\n" > /etc/pacman.d/hooks/100-systemd-boot.hook
     # Setting default bootloader entry
     printf "default arch\neditor no\nauto-entries 1\n" > /boot/loader/loader.conf
-    # Setup internet access with ConnMan
-    sudo systemctl enable --now iwd
-    iwctl
-    wait
+    # Setup internet access with iwd
+    sudo systemctl enable iwd
     printf "\nPlease reboot and then rerun this script with 'postreboot'\n\n"
     exit
 }
