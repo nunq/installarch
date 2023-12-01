@@ -163,16 +163,6 @@ userconfigs() {
     sudo curl "https://www.archlinux.org/mirrorlist/?country=all&protocol=http&protocol=https&ip_version=4" -o /etc/pacman.d/mirrorlist.bak
     awk '/^## Germany$/{f=1}f==0{next}/^$/{exit}{print substr($0, 2)}' /etc/pacman.d/mirrorlist.bak | sudo tee /etc/pacman.d/mirrorlist.bak
     rankmirrors -n 6 /etc/pacman.d/mirrorlist.bak | sudo tee /etc/pacman.d/mirrorlist
-    # Firewall
-    printf "\nConfiguring firewall...\n\n"
-    sudo ufw default deny
-    sudo ufw allow syncthing
-    sudo ufw allow syncthing-gui
-    # lan
-    sudo ufw allow from 192.168.178.0/24
-    sudo ufw status
-    sudo ufw --force enable
-    sudo systemctl enable ufw
 }
 case $1 in
     start)
