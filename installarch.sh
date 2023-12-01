@@ -5,6 +5,12 @@ if [[ $(id -u) -eq 0 ]] ; then
     loadkeys de-latin1
 fi
 curl -s https://raw.githubusercontent.com/hyphenc/installarch/master/installarch.sh > installarch.sh && chmod +x installarch.sh
+printf "please create partitions as follows:\nbootpart on /dev/nvme0n1p1\nswappart on /dev/nvme0n1p2\nrootpart on /dev/nvme0n1p3"
+
+bootpart="/dev/nvme0n1p1"
+swappart="/dev/nvme0n1p2"
+rootpart="/dev/nvme0n1p3"
+
 startscript() {
     timedatectl set-ntp true
     printf "\nCreate partitions\n\n"
@@ -12,11 +18,6 @@ startscript() {
     printf "\nExample:\n1G boot partition, hexcode ef00, label: boot\n2G swap partition, hexcode 8200, label: swap\n*G root partition, hexcode 8300, label: root\n\n(maybe take a picture with your phone to remember the hexcodes)\n\nPlease enter the disk to edit (e.g. /dev/nvme0n1):\n\n"
     cgdisk
     wait
-    printf "\nDisk setup\n\n"
-    lsblk -f
-    read -rp "boot partition? : " bootpart
-    read -rp "root partition? : " rootpart
-    read -rp "swap partition? (to skip this, press enter) : " swappart
     printf "\nCreating boot partition...\n\n"
     mkfs.fat -F32 "$bootpart"
     printf "\nCreate LUKS encrypted partition\n\n"
@@ -69,7 +70,6 @@ postchroot() {
     printf "\nConfiguring systemd-boot...\n\n"
     # Setting up systemd-boot
     lsblk -f
-    read -rp "root partition? : " rootpart
     luksuuid=$(cryptsetup luksUUID "$rootpart")
     bootctl --esp-path=/boot install # TODO is using --esp-path correct here?
     printf "title\tArch Linux\nlinux\t/vmlinuz-linux\ninitrd\t/intel-ucode.img\ninitrd\t/initramfs-linux.img\noptions\trw luks.uuid=$luksuuid luks.name=$luksuuid=luks root=/dev/mapper/luks\n" > /boot/loader/entries/arch.conf
