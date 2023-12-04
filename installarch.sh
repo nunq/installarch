@@ -135,7 +135,7 @@ userconfigs() {
     fish -c "set -Ux SHELL /usr/bin/fish; set -Ux EDITOR nvim"
     # Properly configure pacman mirrors
     printf "\nProperly configuring pacman mirrors...\n"
-    sudo curl "https://www.archlinux.org/mirrorlist/?country=all&protocol=http&protocol=https&ip_version=4" -o /etc/pacman.d/mirrorlist.bak
+    sudo curl "https://archlinux.org/mirrorlist/?country=all&protocol=http&protocol=https&ip_version=4" -o /etc/pacman.d/mirrorlist.bak
     awk '/^## Germany$/{f=1}f==0{next}/^$/{exit}{print substr($0, 2)}' /etc/pacman.d/mirrorlist.bak | sudo tee /etc/pacman.d/mirrorlist.bak
     rankmirrors -n 6 /etc/pacman.d/mirrorlist.bak | sudo tee /etc/pacman.d/mirrorlist
 }
