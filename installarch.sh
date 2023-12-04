@@ -93,7 +93,7 @@ installpkg() {
     rm -rf yay/
     printf "\nInstalling packages...\n\n"
     yay -S --needed --noconfirm --sudoloop $(curl -s https://raw.githubusercontent.com/nunq/dotfiles/main/.other/packages.txt | tr "\n" " ")
-    yay -Rsndd dmenu # because it's a clipmenu dependency
+    yay -Rsndd --noconfirm dmenu # because it's a clipmenu dependency
 }
 buildpkg() {
     printf "\nBuilding dwm and dmenu...\n"
