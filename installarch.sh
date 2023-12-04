@@ -123,6 +123,7 @@ userconfigs() {
     mkdir ~/.cfg
     git clone --bare https://github.com/nunq/dotfiles ~/.cfg/
     git --git-dir=$HOME/.cfg/ --work-tree=$HOME config --local status.showUntrackedFiles no
+    rm -r ~/.config/fish/ # else git checkout wont work
     git --git-dir=$HOME/.cfg/ --work-tree=$HOME checkout
     cd .other/
     bash ./deploy
