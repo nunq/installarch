@@ -78,7 +78,7 @@ postchroot() {
     # Setting default bootloader entry
     printf "default arch\neditor no\nauto-entries 1\n" > /boot/loader/loader.conf
     # Setup internet access with iwd
-    sudo systemctl enable iwd
+    sudo systemctl enable iwd systemd-resolved systemd-networkd
     printf "\nPlease reboot and then rerun this script with 'postreboot'\n\n"
     exit
 }
