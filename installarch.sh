@@ -5,13 +5,13 @@ if [[ $(id -u) -eq 0 ]] ; then
     loadkeys de-latin1
 fi
 curl -s https://raw.githubusercontent.com/hyphenc/installarch/master/installarch.sh > installarch.sh && chmod +x installarch.sh
-printf "please create partitions as follows:\nbootpart on /dev/nvme0n1p1\nswappart on /dev/nvme0n1p2\nrootpart on /dev/nvme0n1p3"
 
 bootpart="/dev/nvme0n1p1"
 swappart="/dev/nvme0n1p2"
 rootpart="/dev/nvme0n1p3"
 
 startscript() {
+    printf "please create partitions as follows:\nbootpart on /dev/nvme0n1p1\nswappart on /dev/nvme0n1p2\nrootpart on /dev/nvme0n1p3"
     timedatectl set-ntp true
     printf "\nCreate partitions\n\n"
     lsblk
